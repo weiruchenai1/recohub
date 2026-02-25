@@ -4,22 +4,33 @@ interface Env {
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const url = new URL(context.request.url)
-  const category = url.searchParams.get('category') || 'software'
+  const category = url.searchParams.get('category')
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'))
   const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('perPage') || '20')))
   const q = url.searchParams.get('q')?.trim() || ''
 
   const offset = (page - 1) * perPage
 
-  let countSql = 'SELECT COUNT(*) as total FROM items WHERE category = ?'
-  let dataSql = 'SELECT * FROM items WHERE category = ?'
-  const params: (string | number)[] = [category]
+  let countSql = 'SELECT COUNT(*) as total FROM items'
+  let dataSql = 'SELECT * FROM items'
+  const params: (string | number)[] = []
+  const conditions: string[] = []
+
+  if (category) {
+    conditions.push('category = ?')
+    params.push(category)
+  }
 
   if (q) {
     const like = `%${q}%`
-    countSql += ' AND (name LIKE ? OR note LIKE ? OR url LIKE ?)'
-    dataSql += ' AND (name LIKE ? OR note LIKE ? OR url LIKE ?)'
+    conditions.push('(name LIKE ? OR note LIKE ? OR url LIKE ?)')
     params.push(like, like, like)
+  }
+
+  if (conditions.length > 0) {
+    const where = ' WHERE ' + conditions.join(' AND ')
+    countSql += where
+    dataSql += where
   }
 
   dataSql += ' ORDER BY sort_order ASC, id ASC LIMIT ? OFFSET ?'
@@ -54,6 +65,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (!body.category || !body.name || !body.url) {
     return new Response(JSON.stringify({ error: 'Missing required fields' }), {
       status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const existing = await context.env.DB.prepare(
+    'SELECT id FROM items WHERE category = ? AND url = ?'
+  )
+    .bind(body.category, body.url)
+    .first()
+
+  if (existing) {
+    return new Response(JSON.stringify({ error: '该分类下已存在相同链接的条目' }), {
+      status: 409,
       headers: { 'Content-Type': 'application/json' },
     })
   }

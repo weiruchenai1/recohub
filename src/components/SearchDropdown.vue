@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { useItemsStore } from '@/stores/items'
-import { useUiStore } from '@/stores/ui'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { api } from '@/lib/api'
+import type { Item, PaginatedResponse } from '@/types'
 
 const props = defineProps<{
   scope: 'global' | 'local'
@@ -12,23 +12,20 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const items = useItemsStore()
-const ui = useUiStore()
 const el = ref<HTMLElement | null>(null)
+const results = ref<Item[]>([])
 
-const filtered = computed(() => {
-  const kw = props.keyword.trim().toLowerCase()
-  if (!kw) return []
-  return items.items.filter(item =>
-    item.name.toLowerCase().includes(kw) ||
-    item.note.toLowerCase().includes(kw) ||
-    item.url.toLowerCase().includes(kw)
-  )
-})
-
-function displayUrl(url: string): string {
-  return url.replace(/^https?:\/\//, '').replace(/\/$/, '')
-}
+watch(
+  () => props.keyword,
+  async (kw) => {
+    const q = kw.trim()
+    if (!q) { results.value = []; return }
+    const query = new URLSearchParams({ q, page: '1', perPage: '50' })
+    const res = await api.get<PaginatedResponse<Item>>(`/items?${query}`)
+    results.value = res.data
+  },
+  { immediate: true },
+)
 
 function onClickOutside(e: MouseEvent) {
   if (el.value && !el.value.contains(e.target as Node)) {
@@ -51,7 +48,7 @@ onBeforeUnmount(() => {
     style="top:calc(100% + 4px);background-color:var(--row-bg);border-color:var(--border-color);box-shadow:0 8px 24px rgba(0,0,0,0.12);scrollbar-width:none"
   >
     <a
-      v-for="item in filtered"
+      v-for="item in results"
       :key="item.id"
       :href="item.url"
       target="_blank"
@@ -69,7 +66,7 @@ onBeforeUnmount(() => {
       </template>
     </a>
     <div
-      v-if="filtered.length === 0"
+      v-if="results.length === 0"
       class="py-3.5 text-center text-[13px]"
       style="color:var(--note-color)"
     >

@@ -3,10 +3,7 @@ import { ref } from 'vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import SearchDropdown from '@/components/SearchDropdown.vue'
 import { useUiStore } from '@/stores/ui'
-import { useAuthStore } from '@/stores/auth'
-
 const ui = useUiStore()
-const auth = useAuthStore()
 const globalDropdownOpen = ref(false)
 
 function onGlobalInput() {

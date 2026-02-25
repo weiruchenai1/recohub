@@ -6,8 +6,9 @@ CREATE TABLE IF NOT EXISTS items (
     note TEXT DEFAULT '',
     sort_order INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(category, url)
 );
 
-CREATE INDEX idx_items_category ON items(category);
-CREATE INDEX idx_items_sort_order ON items(sort_order);
+CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
+CREATE INDEX IF NOT EXISTS idx_items_sort_order ON items(sort_order);

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, computed, toRef } from 'vue'
+import { watch, toRef } from 'vue'
 import Navbar from '@/components/Navbar.vue'
 import TabBar from '@/components/TabBar.vue'
 import Toolbar from '@/components/Toolbar.vue'
@@ -16,22 +16,19 @@ import { useDebouncedRef } from '@/composables/useDebounce'
 const ui = useUiStore()
 const items = useItemsStore()
 
-const debouncedGlobal = useDebouncedRef(toRef(ui, 'globalSearch'), 300)
 const debouncedLocal = useDebouncedRef(toRef(ui, 'localSearch'), 300)
-
-const searchQuery = computed(() => debouncedGlobal.value || debouncedLocal.value)
 
 function loadItems() {
   items.fetchItems({
     category: ui.activeTab,
     page: ui.page,
     perPage: ui.perPage,
-    q: searchQuery.value || undefined,
+    q: debouncedLocal.value || undefined,
   })
 }
 
 watch(
-  () => [ui.activeTab, ui.page, ui.perPage, searchQuery.value],
+  () => [ui.activeTab, ui.page, ui.perPage, debouncedLocal.value],
   () => {
     items.clearSelection()
     loadItems()
@@ -46,7 +43,7 @@ watch(
     <TabBar />
     <Toolbar @refresh="loadItems" />
 
-    <div v-if="items.loading" class="text-center py-12" style="color:var(--note-color)">
+    <div v-if="items.loading && !items.initialized" class="text-center py-12" style="color:var(--note-color)">
       加载中...
     </div>
 

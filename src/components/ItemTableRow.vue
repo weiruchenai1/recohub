@@ -2,7 +2,6 @@
 import CustomCheckbox from '@/components/CustomCheckbox.vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
-import { useAuthStore } from '@/stores/auth'
 import type { Item } from '@/types'
 
 const props = defineProps<{
@@ -17,27 +16,11 @@ const emit = defineEmits<{
 
 const items = useItemsStore()
 const ui = useUiStore()
-const auth = useAuthStore()
-
 function displayUrl(url: string): string {
-  return url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  try { return new URL(url).hostname } catch { return url }
 }
 
 const isChecked = () => items.selectedIds.has(props.item.id)
-
-function handleEdit() {
-  ui.requireAuthOrLogin(() => {
-    emit('edit')
-  }, auth.isLoggedIn)
-}
-
-async function handleDelete() {
-  ui.requireAuthOrLogin(async () => {
-    if (!confirm(`确定删除「${props.item.name}」？`)) return
-    await items.deleteItem(props.item.id)
-    emit('deleted')
-  }, auth.isLoggedIn)
-}
 </script>
 
 <template>

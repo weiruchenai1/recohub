@@ -3,7 +3,6 @@ import { useFavicon } from '@/composables/useFavicon'
 import CustomCheckbox from '@/components/CustomCheckbox.vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
-import { useAuthStore } from '@/stores/auth'
 import type { Item } from '@/types'
 
 const props = defineProps<{
@@ -17,11 +16,10 @@ const emit = defineEmits<{
 
 const items = useItemsStore()
 const ui = useUiStore()
-const auth = useAuthStore()
-const { faviconUrl, loaded } = useFavicon(props.item.url)
+const { faviconUrl } = useFavicon(props.item.url)
 
 function displayUrl(url: string): string {
-  return url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  try { return new URL(url).hostname } catch { return url }
 }
 
 const isChecked = () => items.selectedIds.has(props.item.id)

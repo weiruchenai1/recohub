@@ -7,6 +7,7 @@ export const useItemsStore = defineStore('items', () => {
   const items = ref<Item[]>([])
   const total = ref(0)
   const loading = ref(false)
+  const initialized = ref(false)
   const selectedIds = ref<Set<number>>(new Set())
 
   const editingItem = ref<Item | null>(null)
@@ -23,7 +24,7 @@ export const useItemsStore = defineStore('items', () => {
     perPage: number
     q?: string
   }) {
-    loading.value = true
+    if (!initialized.value) loading.value = true
     try {
       const query = new URLSearchParams({
         category: params.category,
@@ -35,6 +36,7 @@ export const useItemsStore = defineStore('items', () => {
       const res = await api.get<PaginatedResponse<Item>>(`/items?${query}`)
       items.value = res.data
       total.value = res.total
+      initialized.value = true
     } finally {
       loading.value = false
     }
@@ -92,7 +94,7 @@ export const useItemsStore = defineStore('items', () => {
   }
 
   return {
-    items, total, loading, selectedIds, editingItem, modalMode,
+    items, total, loading, initialized, selectedIds, editingItem, modalMode,
     selectedCount, allSelected,
     fetchItems, createItem, updateItem, deleteItem,
     batchDelete, batchMove,
