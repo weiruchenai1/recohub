@@ -43,7 +43,7 @@ watch(
     <TabBar />
     <Toolbar @refresh="loadItems" />
 
-    <div v-if="items.loading && !items.initialized" class="text-center py-12" style="color:var(--note-color)">
+    <div v-if="items.loading && !items.initialized" class="text-center py-12 text-note">
       加载中...
     </div>
 

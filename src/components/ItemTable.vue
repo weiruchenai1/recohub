@@ -20,27 +20,26 @@ const headerLabel = {
 </script>
 
 <template>
-  <div class="overflow-x-auto" style="-webkit-overflow-scrolling:touch">
-    <table class="w-full border-collapse border rounded-md overflow-hidden" style="border-color:var(--border-color);box-shadow:0 1px 3px rgba(0,0,0,0.02)">
+  <div class="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+    <table class="w-full border-collapse border border-border rounded-md overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <thead>
         <tr>
           <th
             v-if="ui.checklistEnabled"
-            class="w-10 text-center px-3 py-3 font-semibold border-b"
-            style="background-color:var(--header-bg);border-color:var(--border-color);color:var(--text-color)"
+            class="w-10 text-center px-3 py-3 font-semibold border-b border-border bg-header text-text"
           >
             <CustomCheckbox
               :checked="items.allSelected"
               @change="items.toggleSelectAll()"
             />
           </th>
-          <th class="px-4 py-3 font-semibold text-left border-b w-1/4" style="background-color:var(--header-bg);border-color:var(--border-color);color:var(--text-color)">
+          <th class="px-4 py-3 font-semibold text-left border-b border-border bg-header text-text w-1/4">
             {{ headerLabel[ui.activeTab].name }}
           </th>
-          <th class="px-4 py-3 font-semibold text-left border-b w-[35%]" style="background-color:var(--header-bg);border-color:var(--border-color);color:var(--text-color)">
+          <th class="px-4 py-3 font-semibold text-left border-b border-border bg-header text-text w-[35%]">
             {{ headerLabel[ui.activeTab].url }}
           </th>
-          <th class="px-4 py-3 font-semibold text-left border-b w-[40%]" style="background-color:var(--header-bg);border-color:var(--border-color);color:var(--text-color)">
+          <th class="px-4 py-3 font-semibold text-left border-b border-border bg-header text-text w-[40%]">
             {{ headerLabel[ui.activeTab].note }}
           </th>
         </tr>
@@ -57,8 +56,7 @@ const headerLabel = {
         <tr v-if="items.items.length === 0">
           <td
             :colspan="ui.checklistEnabled ? 4 : 3"
-            class="text-center py-8"
-            style="color:var(--note-color)"
+            class="text-center py-8 text-note"
           >
             暂无数据
           </td>

@@ -11,27 +11,21 @@ const ui = useUiStore()
       role="switch"
       :aria-checked="ui.theme === 'dark'"
       aria-label="Toggle Theme"
-      class="relative block w-10 h-[22px] rounded-[11px] border p-0 cursor-pointer transition-[border-color,background-color] duration-[250ms]"
-      :style="{
-        borderColor: 'var(--border-color)',
-        backgroundColor: ui.theme === 'dark' ? '#313136' : '#e1e1e1',
-      }"
+      class="toggle-track"
+      :class="ui.theme === 'dark' ? 'toggle-track-dark' : 'toggle-track-light'"
       @click="ui.toggleTheme()"
     >
       <span
-        class="absolute top-[1px] left-[1px] w-[18px] h-[18px] rounded-full shadow-sm transition-[transform,background-color] duration-[250ms]"
-        :style="{
-          backgroundColor: ui.theme === 'dark' ? '#000' : '#fff',
-          transform: ui.theme === 'dark' ? 'translateX(18px)' : 'translateX(0)',
-        }"
+        class="toggle-thumb"
+        :class="ui.theme === 'dark' ? 'toggle-thumb-dark' : 'toggle-thumb-light'"
       >
         <span class="relative block w-[18px] h-[18px] rounded-full overflow-hidden">
           <!-- Sun -->
           <span
             class="absolute top-[3px] left-[3px] w-3 h-3 transition-opacity duration-[250ms]"
-            :style="{ opacity: ui.theme === 'dark' ? 0 : 1 }"
+            :class="ui.theme === 'dark' ? 'opacity-0' : 'opacity-100'"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-3 h-3 block" style="fill: #3c3c44">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-3 h-3 block fill-[#3c3c44]">
               <path d="M12,18c-3.3,0-6-2.7-6-6s2.7-6,6-6s6,2.7,6,6S15.3,18,12,18zM12,8c-2.2,0-4,1.8-4,4c0,2.2,1.8,4,4,4c2.2,0,4-1.8,4-4C16,9.8,14.2,8,12,8z"/>
               <path d="M12,4c-0.6,0-1-0.4-1-1V1c0-0.6,0.4-1,1-1s1,0.4,1,1v2C13,3.6,12.6,4,12,4z"/>
               <path d="M12,24c-0.6,0-1-0.4-1-1v-2c0-0.6,0.4-1,1-1s1,0.4,1,1v2C13,23.6,12.6,24,12,24z"/>
@@ -46,9 +40,9 @@ const ui = useUiStore()
           <!-- Moon -->
           <span
             class="absolute top-[3px] left-[3px] w-3 h-3 transition-opacity duration-[250ms]"
-            :style="{ opacity: ui.theme === 'dark' ? 1 : 0 }"
+            :class="ui.theme === 'dark' ? 'opacity-100' : 'opacity-0'"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-3 h-3 block" :style="{ fill: ui.theme === 'dark' ? '#fff' : '#3c3c44' }">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-3 h-3 block" :class="ui.theme === 'dark' ? 'fill-white' : 'fill-[#3c3c44]'">
               <path d="M12.1,22c-0.3,0-0.6,0-0.9,0c-5.5-0.5-9.5-5.4-9-10.9c0.4-4.8,4.2-8.6,9-9c0.4,0,0.8,0.2,1,0.5c0.2,0.3,0.2,0.8-0.1,1.1c-2,2.7-1.4,6.4,1.3,8.4c2.1,1.6,5,1.6,7.1,0c0.3-0.2,0.7-0.3,1.1-0.1c0.3,0.2,0.5,0.6,0.5,1c-0.2,2.7-1.5,5.1-3.6,6.8C16.6,21.2,14.4,22,12.1,22zM9.3,4.4c-2.9,1-5,3.6-5.2,6.8c-0.4,4.4,2.8,8.3,7.2,8.7c2.1,0.2,4.2-0.4,5.8-1.8c1.1-0.9,1.9-2.1,2.4-3.4c-2.5,0.9-5.3,0.5-7.5-1.1C9.2,11.4,8.1,7.7,9.3,4.4z"/>
             </svg>
           </span>
@@ -57,3 +51,41 @@ const ui = useUiStore()
     </button>
   </div>
 </template>
+
+<style scoped>
+.toggle-track {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  border: 1px solid var(--border-color);
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.25s, background-color 0.25s;
+}
+.toggle-track-light {
+  background-color: #e1e1e1;
+}
+.toggle-track-dark {
+  background-color: #313136;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  transition: transform 0.25s, background-color 0.25s;
+}
+.toggle-thumb-light {
+  background-color: #fff;
+  transform: translateX(0);
+}
+.toggle-thumb-dark {
+  background-color: #000;
+  transform: translateX(18px);
+}
+</style>

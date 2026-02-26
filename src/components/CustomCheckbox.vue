@@ -15,7 +15,7 @@ const emit = defineEmits<{
     class="inline-flex items-center justify-center w-4 h-4 rounded-[3px] border p-0 shrink-0 cursor-pointer align-middle transition-[background-color,border-color] duration-150"
     :class="checked ? 'custom-check-checked' : 'custom-check-unchecked'"
   >
-    <svg class="w-3 h-3" style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" :style="{ stroke: checked ? (undefined) : 'transparent' }" viewBox="0 0 24 24">
+    <svg class="w-3 h-3 icon-stroke" :class="{ 'stroke-transparent': !checked }" viewBox="0 0 24 24">
       <path d="M20 6 9 17l-5-5"/>
     </svg>
   </button>

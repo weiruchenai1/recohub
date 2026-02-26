@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@theme inline {
+  --color-page: var(--bg-color);
+  --color-text: var(--text-color);
+  --color-link: var(--link-color);
+  --color-border: var(--border-color);
+  --color-header: var(--header-bg);
+  --color-row: var(--row-bg);
+  --color-row-alt: var(--row-alt-bg);
+  --color-note: var(--note-color);
+  --color-navbar: var(--navbar-bg);
+  --color-search: var(--search-bg);
+  --color-danger: #f85149;
+  --color-overlay: rgba(0,0,0,0.4);
+}
+
 :root {
   --bg-color: #ffffff;
   --text-color: #24292f;
@@ -50,6 +65,23 @@ a {
 }
 a:hover {
   text-decoration: underline;
+}
+
+input, select, button, textarea {
+  font-family: inherit;
+}
+
+.icon-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.row-checked td {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 
 @media (max-width: 768px) {

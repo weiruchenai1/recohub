@@ -51,26 +51,20 @@ function handleDeselect() {
 
 <template>
   <div
-    class="fixed bottom-6 left-1/2 z-[1000] flex items-center gap-1 py-1.5 px-2 rounded-xl border transition-[transform,opacity] duration-300"
+    class="fixed bottom-6 left-1/2 z-[1000] flex items-center gap-1 py-1.5 px-2 rounded-xl border border-border bg-navbar backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-[transform,opacity] duration-300"
     :style="{
-      backgroundColor: 'var(--navbar-bg)',
-      backdropFilter: 'blur(20px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-      borderColor: 'var(--border-color)',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
       transform: show ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(80px)',
       opacity: show ? '1' : '0',
       pointerEvents: show ? 'auto' : 'none',
     }"
   >
     <span
-      class="text-[13px] font-semibold px-2.5 whitespace-nowrap leading-9"
-      style="color:var(--text-color)"
+      class="text-[13px] font-semibold px-2.5 whitespace-nowrap leading-9 text-text"
     >
       已选 {{ items.selectedCount }} 项
     </span>
 
-    <div class="w-px h-5 shrink-0" style="background-color:var(--border-color)"></div>
+    <div class="w-px h-5 shrink-0 bg-border"></div>
 
     <!-- Rename -->
     <button
@@ -102,7 +96,7 @@ function handleDeselect() {
       <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
     </button>
 
-    <div class="w-px h-5 shrink-0" style="background-color:var(--border-color)"></div>
+    <div class="w-px h-5 shrink-0 bg-border"></div>
 
     <!-- Deselect -->
     <button

@@ -25,38 +25,26 @@ const isChecked = () => items.selectedIds.has(props.item.id)
 
 <template>
   <tr
-    class="transition-[background-color] duration-200 border-b"
-    :class="{ 'row-checked': isChecked() }"
-    :style="{
-      backgroundColor: isChecked() ? undefined : (index % 2 === 0 ? 'var(--row-bg)' : 'var(--row-alt-bg)'),
-      borderColor: 'var(--border-color)',
+    class="table-row"
+    :class="{
+      'row-checked': isChecked(),
+      'even-row': !isChecked() && index % 2 === 0,
+      'odd-row': !isChecked() && index % 2 !== 0,
     }"
-    @mouseenter="!isChecked() && (($event.currentTarget as HTMLElement).style.backgroundColor = 'var(--header-bg)')"
-    @mouseleave="!isChecked() && (($event.currentTarget as HTMLElement).style.backgroundColor = index % 2 === 0 ? 'var(--row-bg)' : 'var(--row-alt-bg)')"
   >
     <td
       v-if="ui.checklistEnabled"
-      class="w-10 text-center px-3 py-3 border-b"
-      style="border-color:var(--border-color)"
-      :style="isChecked() ? {} : {}"
+      class="w-10 text-center px-3 py-3 border-b border-border"
     >
       <CustomCheckbox
         :checked="isChecked()"
         @change="items.toggleSelect(item.id)"
       />
     </td>
-    <td
-      class="px-4 py-3 border-b"
-      style="border-color:var(--border-color)"
-      :style="isChecked() ? { opacity: '0.45', textDecoration: 'line-through' } : {}"
-    >
+    <td class="px-4 py-3 border-b border-border">
       <strong>{{ item.name }}</strong>
     </td>
-    <td
-      class="px-4 py-3 border-b"
-      style="border-color:var(--border-color)"
-      :style="isChecked() ? { opacity: '0.45', textDecoration: 'line-through' } : {}"
-    >
+    <td class="px-4 py-3 border-b border-border">
       <a
         :href="item.url"
         target="_blank"
@@ -65,12 +53,24 @@ const isChecked = () => items.selectedIds.has(props.item.id)
         {{ displayUrl(item.url) }}
       </a>
     </td>
-    <td
-      class="px-4 py-3 border-b text-[0.9em]"
-      style="border-color:var(--border-color);color:var(--note-color)"
-      :style="isChecked() ? { opacity: '0.45', textDecoration: 'line-through' } : {}"
-    >
+    <td class="px-4 py-3 border-b border-border text-[0.9em] text-note">
       {{ item.note }}
     </td>
   </tr>
 </template>
+
+<style scoped>
+.table-row {
+  transition: background-color 0.2s;
+}
+.even-row {
+  background-color: var(--row-bg);
+}
+.odd-row {
+  background-color: var(--row-alt-bg);
+}
+.even-row:hover,
+.odd-row:hover {
+  background-color: var(--header-bg);
+}
+</style>

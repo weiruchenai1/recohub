@@ -11,27 +11,40 @@ const tabs: { key: Category; label: string }[] = [
 </script>
 
 <template>
-  <div class="flex items-center border-b" style="border-color: var(--border-color)">
+  <div class="flex items-center border-b border-border">
     <div class="flex">
       <button
         v-for="tab in tabs"
         :key="tab.key"
         @click="ui.setTab(tab.key)"
-        class="px-6 py-3 text-lg font-medium border-b-2 cursor-pointer transition-[color,border-color] duration-200"
-        :style="{
-          background: 'none',
-          border: 'none',
-          borderBottom: ui.activeTab === tab.key
-            ? '2px solid var(--link-color)'
-            : '2px solid transparent',
-          color: ui.activeTab === tab.key ? 'var(--link-color)' : 'var(--note-color)',
-          fontFamily: 'inherit',
-        }"
-        @mouseenter="($event.target as HTMLElement).style.color = ui.activeTab === tab.key ? 'var(--link-color)' : 'var(--text-color)'"
-        @mouseleave="($event.target as HTMLElement).style.color = ui.activeTab === tab.key ? 'var(--link-color)' : 'var(--note-color)'"
+        class="tab-btn"
+        :class="ui.activeTab === tab.key ? 'tab-btn-active' : 'tab-btn-inactive'"
       >
         {{ tab.label }}
       </button>
     </div>
   </div>
 </template>
+
+<style scoped>
+.tab-btn {
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.tab-btn-active {
+  border-bottom-color: var(--link-color);
+  color: var(--link-color);
+}
+.tab-btn-inactive {
+  color: var(--note-color);
+}
+.tab-btn-inactive:hover {
+  color: var(--text-color);
+}
+</style>

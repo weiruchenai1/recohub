@@ -31,8 +31,7 @@ function goTo(p: number) {
 
 <template>
   <div
-    class="flex items-center justify-between py-3.5 text-[13px] select-none"
-    style="color:var(--note-color)"
+    class="flex items-center justify-between py-3.5 text-[13px] select-none text-note"
   >
     <!-- Left: total + per page -->
     <div class="flex items-center gap-1.5">
@@ -40,8 +39,7 @@ function goTo(p: number) {
       <select
         :value="ui.perPage"
         @change="ui.perPage = Number(($event.target as HTMLSelectElement).value); ui.page = 1"
-        class="py-1 px-2 text-[13px] rounded-md outline-none cursor-pointer"
-        style="color:var(--text-color);background-color:var(--row-bg);border:1px solid var(--border-color);font-family:inherit"
+        class="py-1 px-2 text-[13px] rounded-md outline-none cursor-pointer text-text bg-row border border-border"
       >
         <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
       </select>
@@ -56,7 +54,7 @@ function goTo(p: number) {
         @click="goTo(ui.page - 1)"
         class="page-btn"
       >
-        <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+        <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 icon-stroke">
           <path d="m15 18-6-6 6-6"/>
         </svg>
       </button>
@@ -64,8 +62,7 @@ function goTo(p: number) {
       <template v-for="p in pages" :key="p">
         <span
           v-if="p === '...'"
-          class="inline-flex items-center justify-center min-w-8 h-8 text-sm tracking-wider"
-          style="color:var(--note-color)"
+          class="inline-flex items-center justify-center min-w-8 h-8 text-sm tracking-wider text-note"
         >···</span>
         <button
           v-else
@@ -83,7 +80,7 @@ function goTo(p: number) {
         @click="goTo(ui.page + 1)"
         class="page-btn"
       >
-        <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+        <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 icon-stroke">
           <path d="m9 18 6-6-6-6"/>
         </svg>
       </button>
@@ -104,7 +101,6 @@ function goTo(p: number) {
   background: transparent;
   color: var(--text-color);
   font-size: 13px;
-  font-family: inherit;
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
 }

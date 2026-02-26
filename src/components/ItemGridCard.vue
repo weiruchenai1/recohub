@@ -31,20 +31,14 @@ function firstChar(): string {
 
 <template>
   <div
-    class="relative flex flex-col p-4 border rounded-[10px] cursor-default transition-[background-color,box-shadow,border-color] duration-200"
-    :style="{
-      borderColor: 'var(--border-color)',
-      backgroundColor: 'var(--row-bg)',
-      opacity: isChecked() ? '0.45' : '1',
-    }"
-    @mouseenter="($event.currentTarget as HTMLElement).style.backgroundColor='var(--header-bg)';($event.currentTarget as HTMLElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'"
-    @mouseleave="($event.currentTarget as HTMLElement).style.backgroundColor='var(--row-bg)';($event.currentTarget as HTMLElement).style.boxShadow='none'"
+    class="grid-card"
+    :class="{ 'grid-card-checked': isChecked() }"
   >
     <!-- Checkbox -->
     <div
       v-if="ui.checklistEnabled"
       class="absolute top-3 right-3"
-      :style="isChecked() ? { opacity: '1' } : {}"
+      :class="{ 'opacity-100': isChecked() }"
     >
       <CustomCheckbox
         :checked="isChecked()"
@@ -53,7 +47,7 @@ function firstChar(): string {
     </div>
 
     <!-- Name with favicon -->
-    <div class="flex items-center gap-2.5 text-[15px] font-semibold mb-2 pr-7 break-words" style="color:var(--text-color)">
+    <div class="flex items-center gap-2.5 text-[15px] font-semibold mb-2 pr-7 break-words text-text">
       <img
         v-if="faviconUrl"
         :src="faviconUrl"
@@ -63,8 +57,7 @@ function firstChar(): string {
       />
       <div
         v-else
-        class="w-8 h-8 rounded-md shrink-0 flex items-center justify-center text-[15px] font-bold text-white"
-        style="background-color:var(--note-color)"
+        class="w-8 h-8 rounded-md shrink-0 flex items-center justify-center text-[15px] font-bold text-white bg-note"
       >
         {{ firstChar() }}
       </div>
@@ -76,8 +69,7 @@ function firstChar(): string {
       :href="item.url"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-[13px] font-medium mb-2 break-all"
-      style="color:var(--link-color)"
+      class="text-[13px] font-medium mb-2 break-all text-link"
     >
       {{ displayUrl(item.url) }}
     </a>
@@ -85,10 +77,30 @@ function firstChar(): string {
     <!-- Note -->
     <div
       v-if="item.note"
-      class="text-xs mt-auto"
-      style="color:var(--note-color)"
+      class="text-xs mt-auto text-note"
     >
       {{ item.note }}
     </div>
   </div>
 </template>
+
+<style scoped>
+.grid-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background-color: var(--row-bg);
+  cursor: default;
+  transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.grid-card:hover {
+  background-color: var(--header-bg);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.grid-card-checked {
+  opacity: 0.45;
+}
+</style>
