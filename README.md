@@ -37,6 +37,7 @@ recohub/
 │   │   ├── SearchDropdown.vue    # 搜索下拉结果
 │   │   ├── PaginationBar.vue     # 分页控件
 │   │   ├── FloatingToolbar.vue   # 浮动批量操作栏
+│   │   ├── ConfirmDialog.vue    # 自定义确认弹窗
 │   │   ├── ThemeToggle.vue       # 主题切换按钮
 │   │   └── CustomCheckbox.vue    # 自定义复选框
 │   ├── stores/                   # Pinia 状态管理
@@ -141,14 +142,14 @@ npx wrangler d1 execute recohub-db --local --file=db/seed.sql
 需要两个终端同时运行：
 
 ```bash
-# 终端 1: 启动 Vite 前端（HMR 热更新）
-npm run dev
+# 终端 1: 启动 Wrangler（提供 API 和 D1 数据库）
+npx wrangler pages dev
 
-# 终端 2: 启动 Wrangler 代理（提供 API 和 D1 数据库）
-npx wrangler pages dev --proxy=5173
+# 终端 2: 启动 Vite 前端（HMR 热更新）
+npm run dev
 ```
 
-然后访问 `http://127.0.0.1:8788`。
+然后访问 `http://localhost:5173`。Vite 会将 `/api` 请求自动代理到 Wrangler。
 
 > 需要在项目根目录创建 `.dev.vars` 文件配置本地环境变量：
 >
@@ -171,121 +172,83 @@ npm run build && npx wrangler pages dev dist
 
 ## 部署到 Cloudflare Pages
 
-### 前置准备
+### 方式一：Fork 部署（推荐）
 
-- 一个 [Cloudflare](https://dash.cloudflare.com/) 账号
-- 项目代码已推送到 GitHub 仓库
-- 本地已安装 Wrangler CLI（项目依赖中已包含）
+无需安装任何工具，全程在浏览器中完成。
 
-### 第一步：登录 Wrangler
+**1. Fork 并创建项目**
+
+- Fork 本仓库到自己的 GitHub 账号
+- 进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers 和 Pages** → **创建应用程序** → **Continue with GitHub**
+- 选择 Fork 的仓库 → **下一步**
+- 构建命令填 `npm run build`
+- 展开 **高级设置**，在底部的环境变量区域添加（点击 **+ 添加变量** 增加第二条，均勾选 **加密**）：
+
+| 变量名称 | 变量值 |
+|----------|--------|
+| `AUTH_PASSWORD` | 自定义管理员登录密码 |
+| `JWT_SECRET` | 随机字符串（建议 32 位以上） |
+
+- 点击 **部署**
+
+**2. 创建 D1 数据库并绑定**
+
+- 进入 Dashboard 左侧 **存储和数据库** → **D1 SQL 数据库** → **+ 创建数据库**
+- 名称填 `recohub-db`，数据位置保持默认，点击 **创建**
+- 返回项目页面 → **设置** → **绑定** → **添加**：
+
+| 类型 | 名称 | 值 |
+|------|------|-----|
+| D1 数据库 | `DB` | `recohub-db` |
+
+**3. 重新部署**
+
+进入 **部署** → 找到最新的部署 → **重试部署**。
+
+> 数据库会在首次访问时自动建表并填充种子数据，无需手动初始化。
+
+### 方式二：CLI 部署
+
+适合本地开发者，需要安装 Node.js 和项目依赖。
+
+**1. 登录并创建 D1 数据库**
 
 ```bash
 npx wrangler login
-```
-
-浏览器会自动打开授权页面，点击 **Allow** 完成登录。
-
-### 第二步：创建 D1 数据库
-
-```bash
 npx wrangler d1 create recohub-db
 ```
 
-命令执行后会输出类似内容：
+将输出的 `database_id` 替换 `wrangler.toml` 中的占位值（`placeholder-replace-with-actual-id`）。
 
-```
-✅ Successfully created DB 'recohub-db'
-
-[[d1_databases]]
-binding = "DB"
-database_name = "recohub-db"
-database_id = "xxxx-xxxx-xxxx-xxxx"
-```
-
-将输出的 `database_id` 复制，替换 `wrangler.toml` 中的占位值：
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "recohub-db"
-database_id = "xxxx-xxxx-xxxx-xxxx"  # 替换为你的实际 ID
-```
-
-### 第三步：初始化远程数据库
+**2. 首次部署**
 
 ```bash
-npx wrangler d1 execute recohub-db --remote --file=db/schema.sql
-npx wrangler d1 execute recohub-db --remote --file=db/seed.sql
+npm run build
+npx wrangler pages deploy dist
 ```
 
-### 第四步：创建 Pages 项目
+**3. 配置密钥与绑定**
 
-进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create**：
+进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → 项目页面 → **设置**，按方式一的第 3 步配置变量和绑定。
 
-1. 选择 **Pages** → **Connect to Git**
-2. 选择你的 GitHub 仓库
-3. 配置构建设置：
-
-| 配置项 | 值 |
-|--------|-----|
-| Framework preset | `None` |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-
-4. 点击 **Save and Deploy**，等待首次构建完成
-
-### 第五步：配置环境变量
-
-进入项目页面 → **Settings** → **Environment variables**，添加：
-
-| 变量名 | 值 | 说明 |
-|--------|-----|------|
-| `AUTH_PASSWORD` | 自定义密码 | 管理员登录密码 |
-| `JWT_SECRET` | 随机字符串 | JWT 签名密钥，建议 32 位以上 |
-
-> 可以用以下命令生成随机密钥：
-> ```bash
-> node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-> ```
-
-### 第六步：绑定 D1 数据库
-
-进入项目页面 → **Settings** → **Bindings**：
-
-1. 点击 **Add binding**
-2. 选择 **D1 Database**
-3. Variable name 填 `DB`
-4. 选择刚才创建的 `recohub-db`
-5. 保存
-
-### 第七步：重新部署
-
-绑定和环境变量添加后需要触发一次新部署才能生效：
-
-进入 **Deployments** → 找到最新的部署 → 点击 **Retry deployment**
-
-或者通过命令行直接部署：
+**4. 重新部署生效**
 
 ```bash
-npm run build && npx wrangler pages deploy dist
+npm run build
+npx wrangler pages deploy dist
 ```
 
 ### 部署完成
 
 访问 Cloudflare 分配的域名（格式为 `https://recohub.pages.dev`）即可使用。
 
-如需绑定自定义域名，进入项目页面 → **Custom domains** → **Set up a custom domain**。
+如需绑定自定义域名，进入项目页面 → **自定义域** → **设置自定义域**。
 
 ### 后续更新
 
-每次推送代码到 GitHub 后，Cloudflare Pages 会自动触发构建和部署。也可以手动部署：
+连接 Git 部署的项目，每次推送代码会自动触发构建。也可以手动部署：
 
 ```bash
-npm run build && npx wrangler pages deploy dist
-```
-
-如需更新数据库结构：
-
-```bash
-npx wrangler d1 execute recohub-db --remote --file=db/schema.sql
+npm run build
+npx wrangler pages deploy dist
 ```

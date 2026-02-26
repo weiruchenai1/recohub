@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { CATEGORY_OPTIONS } from '@/types'
+import type { Category } from '@/types'
 
 const emit = defineEmits<{ refresh: [] }>()
 
@@ -12,8 +14,11 @@ const auth = useAuthStore()
 
 const show = computed(() => ui.checklistEnabled && items.selectedCount > 0)
 
-const targetCategory = computed(() =>
-  ui.activeTab === 'software' ? 'website' : 'software'
+const showMoveMenu = ref(false)
+const moveMenuRef = ref<HTMLElement | null>(null)
+
+const moveTargets = computed(() =>
+  CATEGORY_OPTIONS.filter(opt => opt.key !== ui.activeTab)
 )
 
 async function handleRename() {
@@ -25,28 +30,43 @@ async function handleRename() {
   }, auth.isLoggedIn)
 }
 
-async function handleMove() {
-  ui.requireAuthOrLogin(async () => {
-    const ids = Array.from(items.selectedIds)
-    await items.batchMove(ids, targetCategory.value)
-    items.clearSelection()
-    emit('refresh')
+function handleMove() {
+  ui.requireAuthOrLogin(() => {
+    showMoveMenu.value = !showMoveMenu.value
   }, auth.isLoggedIn)
 }
 
+async function confirmMove(category: Category) {
+  const ids = Array.from(items.selectedIds)
+  await items.batchMove(ids, category)
+  items.clearSelection()
+  showMoveMenu.value = false
+  emit('refresh')
+}
+
 async function handleDelete() {
-  ui.requireAuthOrLogin(async () => {
-    if (!confirm(`确定删除选中的 ${items.selectedCount} 项？`)) return
-    const ids = Array.from(items.selectedIds)
-    await items.batchDelete(ids)
-    items.clearSelection()
-    emit('refresh')
+  ui.requireAuthOrLogin(() => {
+    ui.confirm('确认删除', `确定删除选中的 ${items.selectedCount} 项？`, async () => {
+      const ids = Array.from(items.selectedIds)
+      await items.batchDelete(ids)
+      items.clearSelection()
+      emit('refresh')
+    })
   }, auth.isLoggedIn)
 }
 
 function handleDeselect() {
   items.clearSelection()
 }
+
+function onClickOutside(e: MouseEvent) {
+  if (moveMenuRef.value && !moveMenuRef.value.contains(e.target as Node)) {
+    showMoveMenu.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutside))
+onUnmounted(() => document.removeEventListener('click', onClickOutside))
 </script>
 
 <template>
@@ -77,14 +97,29 @@ function handleDeselect() {
     </button>
 
     <!-- Move -->
-    <button
-      @click="handleMove"
-      type="button"
-      title="移动"
-      class="float-btn"
-    >
-      <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="m15 5-3-3-3 3"/><path d="m15 19-3 3-3-3"/><path d="M2 12h20"/><path d="m5 9-3 3 3 3"/><path d="m19 9 3 3-3 3"/></svg>
-    </button>
+    <div ref="moveMenuRef" class="relative">
+      <button
+        @click.stop="handleMove"
+        type="button"
+        title="移动"
+        class="float-btn"
+      >
+        <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="m15 5-3-3-3 3"/><path d="m15 19-3 3-3-3"/><path d="M2 12h20"/><path d="m5 9-3 3 3 3"/><path d="m19 9 3 3-3 3"/></svg>
+      </button>
+      <div
+        v-if="showMoveMenu"
+        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 py-1 rounded-lg border border-border bg-navbar backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_8px_24px_rgba(0,0,0,0.12)] min-w-max"
+      >
+        <button
+          v-for="opt in moveTargets"
+          :key="opt.key"
+          @click="confirmMove(opt.key)"
+          class="move-menu-item"
+        >
+          移动到「{{ opt.label }}」
+        </button>
+      </div>
+    </div>
 
     <!-- Delete -->
     <button
@@ -146,5 +181,23 @@ function handleDeselect() {
 }
 .float-btn-danger:hover {
   background-color: rgba(248, 81, 73, 0.1);
+}
+.move-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+.move-menu-item:hover {
+  background-color: var(--header-bg);
 }
 </style>

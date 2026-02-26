@@ -21,7 +21,7 @@ const headerLabel = {
 
 <template>
   <div class="overflow-x-auto [-webkit-overflow-scrolling:touch]">
-    <table class="w-full border-collapse border border-border rounded-md overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+    <table class="w-full min-w-[600px] border-collapse border border-border rounded-md overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       <thead>
         <tr>
           <th

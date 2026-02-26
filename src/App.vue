@@ -9,6 +9,7 @@ import PaginationBar from '@/components/PaginationBar.vue'
 import FloatingToolbar from '@/components/FloatingToolbar.vue'
 import ItemModal from '@/components/ItemModal.vue'
 import LoginModal from '@/components/LoginModal.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useUiStore } from '@/stores/ui'
 import { useItemsStore } from '@/stores/items'
 import { useDebouncedRef } from '@/composables/useDebounce'
@@ -66,4 +67,5 @@ watch(
   <FloatingToolbar @refresh="loadItems" />
   <ItemModal v-if="ui.showItemModal" @close="ui.showItemModal = false" @saved="loadItems" />
   <LoginModal v-if="ui.showLoginModal" @close="ui.showLoginModal = false" />
+  <ConfirmDialog v-if="ui.showConfirmDialog" />
 </template>

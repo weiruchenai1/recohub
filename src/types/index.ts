@@ -1,5 +1,10 @@
 export type Category = 'software' | 'website'
 
+export const CATEGORY_OPTIONS: { key: Category; label: string }[] = [
+  { key: 'software', label: '软件推荐' },
+  { key: 'website', label: '网站推荐' },
+]
+
 export interface Item {
   id: number
   category: Category

@@ -1,20 +1,15 @@
 <script setup lang="ts">
 import { useUiStore } from '@/stores/ui'
-import type { Category } from '@/types'
+import { CATEGORY_OPTIONS } from '@/types'
 
 const ui = useUiStore()
-
-const tabs: { key: Category; label: string }[] = [
-  { key: 'software', label: '软件推荐' },
-  { key: 'website', label: '网站推荐' },
-]
 </script>
 
 <template>
   <div class="flex items-center border-b border-border">
     <div class="flex">
       <button
-        v-for="tab in tabs"
+        v-for="tab in CATEGORY_OPTIONS"
         :key="tab.key"
         @click="ui.setTab(tab.key)"
         class="tab-btn"

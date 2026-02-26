@@ -19,6 +19,31 @@ export const useUiStore = defineStore('ui', () => {
   const showItemModal = ref(false)
   const pendingAction = ref<(() => void) | null>(null)
 
+  const showConfirmDialog = ref(false)
+  const confirmTitle = ref('')
+  const confirmMessage = ref('')
+  const confirmCallback = ref<(() => void) | null>(null)
+
+  function confirm(title: string, message: string, onConfirm: () => void) {
+    confirmTitle.value = title
+    confirmMessage.value = message
+    confirmCallback.value = onConfirm
+    showConfirmDialog.value = true
+  }
+
+  function resolveConfirm() {
+    showConfirmDialog.value = false
+    if (confirmCallback.value) {
+      confirmCallback.value()
+      confirmCallback.value = null
+    }
+  }
+
+  function cancelConfirm() {
+    showConfirmDialog.value = false
+    confirmCallback.value = null
+  }
+
   function toggleTheme() {
     theme.value = theme.value === 'light' ? 'dark' : 'light'
   }
@@ -61,6 +86,8 @@ export const useUiStore = defineStore('ui', () => {
     theme, layout, activeTab, checklistEnabled,
     globalSearch, localSearch, page, perPage,
     showLoginModal, showItemModal, pendingAction,
+    showConfirmDialog, confirmTitle, confirmMessage,
+    confirm, resolveConfirm, cancelConfirm,
     toggleTheme, setTab, requireAuthOrLogin, onLoginSuccess,
   }
 })

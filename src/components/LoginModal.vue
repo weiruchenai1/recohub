@@ -99,7 +99,7 @@ async function handleLogin() {
   cursor: pointer;
   border: none;
   color: white;
-  background-color: var(--link-color);
+  background-color: var(--btn-primary-bg);
   transition: opacity 0.15s;
 }
 .modal-btn-primary:hover {
