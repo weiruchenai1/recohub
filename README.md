@@ -22,7 +22,7 @@ RecoHub 提供了一个简洁美观的界面，用于组织和分享精选的软
 ## 项目结构
 
 ```
-recommend-list/
+recohub/
 ├── src/                          # 前端源码
 │   ├── components/               # Vue 组件
 │   │   ├── Navbar.vue            # 顶部导航栏（全局搜索、主题切换）

@@ -19,7 +19,7 @@ function onGlobalFocus() {
   <nav
     class="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between h-14 px-6 border-b border-border bg-navbar backdrop-blur-[20px] backdrop-saturate-[180%] transition-[background-color,border-color] duration-300"
   >
-    <span class="text-base font-semibold whitespace-nowrap shrink-0 hidden md:block text-text">推荐列表</span>
+    <span class="text-base font-semibold whitespace-nowrap shrink-0 hidden md:block text-text">RecoHub</span>
 
     <div class="flex-1 max-w-[420px] mx-6 relative">
       <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-[15px] h-[15px] pointer-events-none icon-stroke text-note" viewBox="0 0 24 24">
