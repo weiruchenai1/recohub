@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT NOT NULL CHECK(category IN ('software','website')),
+    category TEXT NOT NULL,
     name TEXT NOT NULL,
     url TEXT NOT NULL,
     note TEXT DEFAULT '',

@@ -38,7 +38,7 @@ function onAccountClick() {
         <svg class="h-6 w-auto" viewBox="44 32 116 136" fill="none">
           <path d="M52 160V40h50a34 34 0 0 1 0 68l50 52h-32L78 108v52Z M78 60h16a14 14 0 0 1 0 28H78Z" fill="currentColor" fill-rule="evenodd"/>
         </svg>
-        <span class="text-base font-semibold whitespace-nowrap hidden md:block text-text">{{ ui.logoText }}</span>
+        <span class="text-base font-semibold whitespace-nowrap hidden md:block text-text truncate max-w-[160px]">{{ ui.logoText }}</span>
       </div>
     </div>
 

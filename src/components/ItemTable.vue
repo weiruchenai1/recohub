@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import ItemTableRow from '@/components/ItemTableRow.vue'
 import CustomCheckbox from '@/components/CustomCheckbox.vue'
 import { useItemsStore } from '@/stores/items'
@@ -13,10 +14,13 @@ const emit = defineEmits<{
 const items = useItemsStore()
 const ui = useUiStore()
 
-const headerLabel = {
-  software: { name: '软件名称', url: '官方下载地址', note: '备注' },
-  website: { name: '网站名称', url: '地址', note: '备注' },
-}
+const headers = computed(() => {
+  const map: Record<string, { name: string; url: string; note: string }> = {
+    software: { name: '软件名称', url: '官方下载地址', note: '备注' },
+    website: { name: '网站名称', url: '地址', note: '备注' },
+  }
+  return map[ui.activeTab] || { name: '名称', url: '链接地址', note: '备注' }
+})
 </script>
 
 <template>
@@ -34,13 +38,13 @@ const headerLabel = {
             />
           </th>
           <th class="px-4 py-3 font-semibold text-left border-b border-border bg-header text-text w-1/4">
-            {{ headerLabel[ui.activeTab].name }}
+            {{ headers.name }}
           </th>
           <th class="px-4 py-3 font-semibold text-left border-b border-border bg-header text-text w-[35%]">
-            {{ headerLabel[ui.activeTab].url }}
+            {{ headers.url }}
           </th>
           <th class="px-4 py-3 font-semibold text-left border-b border-border bg-header text-text w-[40%]">
-            {{ headerLabel[ui.activeTab].note }}
+            {{ headers.note }}
           </th>
         </tr>
       </thead>

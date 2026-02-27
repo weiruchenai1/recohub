@@ -51,8 +51,16 @@ async function removeGroup(index: number) {
   if (!cat) return
 
   // Check if the group has items
-  const query = new URLSearchParams({ category: cat.key, page: '1', perPage: '1' })
-  const res = await api.get<PaginatedResponse<Item>>(`/items?${query}`)
+  let res: PaginatedResponse<Item>
+  try {
+    const query = new URLSearchParams({ category: cat.key, page: '1', perPage: '1' })
+    res = await api.get<PaginatedResponse<Item>>(`/items?${query}`)
+  } catch {
+    groupErrorIndex.value = index
+    groupError.value = '无法检查分组内容，请检查网络连接'
+    groupErrorTimer = setTimeout(() => { groupError.value = ''; groupErrorIndex.value = -1 }, 3000)
+    return
+  }
 
   if (res.total > 0) {
     groupErrorIndex.value = index
