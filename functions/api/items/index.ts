@@ -60,6 +60,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     url: string
     note?: string
     sort_order?: number
+    icon_url?: string | null
   }>()
 
   if (!body.category || !body.name || !body.url) {
@@ -93,9 +94,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   const result = await context.env.DB.prepare(
-    'INSERT INTO items (category, name, url, note, sort_order) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO items (category, name, url, note, sort_order, icon_url) VALUES (?, ?, ?, ?, ?, ?)'
   )
-    .bind(body.category, body.name, body.url, body.note || '', body.sort_order || 0)
+    .bind(body.category, body.name, body.url, body.note || '', body.sort_order || 0, body.icon_url ?? null)
     .run()
 
   const item = await context.env.DB.prepare('SELECT * FROM items WHERE id = ?')

@@ -10,6 +10,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     note?: string
     sort_order?: number
     category?: string
+    icon_url?: string | null
   }>()
 
   const existing = await context.env.DB.prepare('SELECT * FROM items WHERE id = ?')
@@ -42,6 +43,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
       note = ?,
       sort_order = ?,
       category = ?,
+      icon_url = ?,
       updated_at = datetime('now')
     WHERE id = ?`
   ).bind(
@@ -50,6 +52,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     body.note ?? existing.note,
     body.sort_order ?? existing.sort_order,
     body.category ?? existing.category,
+    body.icon_url !== undefined ? body.icon_url : existing.icon_url,
     id,
   ).run()
 

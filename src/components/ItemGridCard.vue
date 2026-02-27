@@ -17,7 +17,7 @@ const emit = defineEmits<{
 
 const items = useItemsStore()
 const ui = useUiStore()
-const { faviconUrl } = useFavicon(props.item.url)
+const { faviconUrl } = useFavicon(props.item.url, props.item.icon_url)
 const faviconFailed = ref(false)
 
 function displayUrl(url: string): string {

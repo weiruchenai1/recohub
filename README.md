@@ -17,6 +17,7 @@ RecoHub 提供了一个简洁美观的界面，用于组织和分享精选的软
 | 拖拽排序 | vue-draggable-plus (SortableJS) |
 | 后端 | Cloudflare Pages Functions (Serverless) |
 | 数据库 | Cloudflare D1 (SQLite) |
+| 对象存储 | Cloudflare R2（自定义图标存储） |
 | 认证 | JWT (jose) |
 | 部署 | Cloudflare Pages |
 
@@ -34,9 +35,9 @@ recohub/
 │   │   ├── ItemTableRow.vue      # 列表行组件
 │   │   ├── ItemGrid.vue          # 网格视图容器
 │   │   ├── ItemGridCard.vue      # 网格卡片组件
-│   │   ├── ItemModal.vue         # 新增/编辑弹窗
+│   │   ├── ItemModal.vue         # 新增/编辑弹窗（含图标获取与上传）
 │   │   ├── LoginModal.vue        # 登录弹窗
-│   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理）
+│   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理、图标管理）
 │   │   ├── SearchDropdown.vue    # 搜索下拉结果
 │   │   ├── PaginationBar.vue     # 分页控件
 │   │   ├── FloatingToolbar.vue   # 浮动批量操作栏
@@ -48,7 +49,7 @@ recohub/
 │   │   ├── ui.ts                 # UI 状态（主题、布局、分类管理等）
 │   │   └── items.ts              # 数据状态（列表增删改查）
 │   ├── composables/              # 组合式函数
-│   │   ├── useFavicon.ts         # Favicon 获取与缓存
+│   │   ├── useFavicon.ts         # Favicon 获取与缓存（支持自定义图标优先）
 │   │   ├── useDebounce.ts        # 防抖
 │   │   └── useClickOutside.ts    # 点击外部检测
 │   ├── lib/                      # 工具库
@@ -63,6 +64,11 @@ recohub/
 │   └── api/
 │       ├── _middleware.ts        # JWT 认证中间件 + 数据库初始化/迁移
 │       ├── login.ts              # 登录接口
+│       ├── icons/
+│       │   ├── index.ts          # 图标列表 / 上传（R2 存储）
+│       │   ├── [key].ts          # 图标访问 / 删除
+│       │   ├── fetch.ts          # 从 URL 抓取图标候选列表
+│       │   └── save.ts           # 将外部图标下载并存入 R2
 │       ├── categories/
 │       │   ├── index.ts          # 分类列表 / 新增 / 批量更新排序
 │       │   └── [key].ts          # 删除分类
@@ -98,10 +104,12 @@ recohub/
 - [x] **用户认证** - 密码登录，JWT Token 鉴权（7天有效期）
 - [x] **明暗主题** - 亮色/暗色主题切换，跟随系统偏好，持久化存储
 - [x] **Favicon 展示** - 自动获取网站图标（Google S2 API + 降级方案），本地缓存7天，加载失败显示首字母占位图标
+- [x] **自定义图标** - 编辑条目时可一键获取网站图标候选列表，选择后存入 R2 永久缓存；也支持手动上传本地图标文件
+- [x] **图标管理** - 系统设置中的图标管理标签页，查看/删除所有已上传的图标
 - [x] **响应式布局** - 适配桌面端与移动端
 - [x] **状态持久化** - UI 偏好（主题、布局、分页等）保存到 localStorage，分类配置存储在后端数据库
 - [x] **个性化设置** - 可配置 LOGO 显示/隐藏、自定义文本、壁纸主题切换
-- [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理
+- [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理、图标管理
 - [x] **账号菜单** - 导航栏用户图标，登录后显示下拉菜单快速访问设置
 - [x] **URL 校验** - 后端 API 新增/编辑时校验 URL 格式，仅允许 http/https 协议
 - [x] **后端 API** - 完整的 RESTful API，含认证中间件
@@ -126,9 +134,15 @@ recohub/
 | `DELETE` | `/api/categories/:key` | 删除分类（分类下有条目时返回 409） | 是 |
 | `GET` | `/api/items` | 获取列表（支持分页、搜索、分类筛选，category 可选） | 否 |
 | `POST` | `/api/items` | 新增条目（自动去重，同分类同 URL 返回 409） | 是 |
-| `PUT` | `/api/items/:id` | 编辑条目 | 是 |
+| `PUT` | `/api/items/:id` | 编辑条目（支持 `icon_url` 字段） | 是 |
 | `DELETE` | `/api/items/:id` | 删除条目 | 是 |
 | `POST` | `/api/items/batch` | 批量操作（删除/移动） | 是 |
+| `GET` | `/api/icons` | 获取所有已上传图标列表 | 否 |
+| `POST` | `/api/icons` | 上传本地图标文件到 R2（FormData） | 是 |
+| `GET` | `/api/icons/:key` | 访问图标文件（强缓存，immutable） | 否 |
+| `DELETE` | `/api/icons/:key` | 删除图标（引用该图标的条目自动清除） | 是 |
+| `POST` | `/api/icons/fetch` | 从目标 URL 抓取图标候选列表 | 是 |
+| `POST` | `/api/icons/save` | 将外部图标 URL 下载并存入 R2 | 是 |
 
 ## 本地开发
 
@@ -217,13 +231,22 @@ npm run build && npx wrangler pages dev dist
 
 - 进入 Dashboard 左侧 **存储和数据库** → **D1 SQL 数据库** → **+ 创建数据库**
 - 名称填 `recohub-db`，数据位置保持默认，点击 **创建**
+
+**3. 创建 R2 存储桶并绑定**
+
+- 进入 Dashboard 左侧 **存储和数据库** → **R2 对象存储** → **+ 创建存储桶**
+- 名称填 `recohub-icons`，点击 **创建存储桶**
+
+**4. 绑定资源**
+
 - 返回项目页面 → **设置** → **绑定** → **添加**：
 
 | 类型 | 名称 | 值 |
 |------|------|-----|
 | D1 数据库 | `DB` | `recohub-db` |
+| R2 存储桶 | `ICONS` | `recohub-icons` |
 
-**3. 重新部署**
+**5. 重新部署**
 
 进入 **部署** → 找到最新的部署 → **重试部署**。
 
@@ -242,7 +265,13 @@ npx wrangler d1 create recohub-db
 
 将输出的 `database_id` 替换 `wrangler.toml` 中的占位值（`placeholder-replace-with-actual-id`）。
 
-**2. 首次部署**
+**2. 创建 R2 存储桶**
+
+```bash
+npx wrangler r2 bucket create recohub-icons
+```
+
+**3. 首次部署**
 
 ```bash
 npm run build
@@ -251,7 +280,7 @@ npx wrangler pages deploy dist
 
 **3. 配置密钥与绑定**
 
-进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → 项目页面 → **设置**，按方式一的第 3 步配置变量和绑定。
+进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → 项目页面 → **设置**，按方式一的第 4 步配置变量和绑定（D1 + R2）。
 
 **4. 重新部署生效**
 

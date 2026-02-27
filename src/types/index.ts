@@ -17,6 +17,7 @@ export interface Item {
   url: string
   note: string
   sort_order: number
+  icon_url: string | null
   created_at: string
   updated_at: string
 }
@@ -38,4 +39,11 @@ export interface LoginResponse {
 
 export interface ApiError {
   error: string
+}
+
+export interface IconInfo {
+  key: string
+  url: string
+  size: number
+  uploaded: string
 }

@@ -6,3 +6,7 @@ pages_build_output_dir = "./dist"
 binding = "DB"
 database_name = "recohub-db"
 database_id = "bee123f1-9787-4f4d-8347-44c22306a386"
+
+[[r2_buckets]]
+binding = "ICONS"
+bucket_name = "recohub-icons"

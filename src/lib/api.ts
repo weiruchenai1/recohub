@@ -51,4 +51,25 @@ export const api = {
 
   delete: <T>(path: string) =>
     request<T>(path, { method: 'DELETE' }),
+
+  async upload<T>(path: string, formData: FormData): Promise<T> {
+    const headers: Record<string, string> = {}
+    const token = getToken()
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    const response = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: 'Upload failed' }))
+      throw new ApiRequestError(response.status, (body as { error?: string }).error || 'Upload failed')
+    }
+
+    return response.json() as Promise<T>
+  },
 }

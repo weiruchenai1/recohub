@@ -2,6 +2,7 @@ import { jwtVerify } from 'jose'
 
 interface Env {
   DB: D1Database
+  ICONS: R2Bucket
   AUTH_PASSWORD: string
   JWT_SECRET: string
 }
@@ -77,6 +78,13 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    version: 3,
+    description: 'Add icon_url column to items table',
+    async run(db) {
+      await db.prepare('ALTER TABLE items ADD COLUMN icon_url TEXT DEFAULT NULL').run()
+    },
+  },
 ]
 
 const LATEST_VERSION = migrations.length > 0 ? migrations[migrations.length - 1].version : 0
@@ -109,6 +117,7 @@ async function ensureDB(db: D1Database) {
         url TEXT NOT NULL,
         note TEXT DEFAULT '',
         sort_order INTEGER DEFAULT 0,
+        icon_url TEXT DEFAULT NULL,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now')),
         UNIQUE(category, url)

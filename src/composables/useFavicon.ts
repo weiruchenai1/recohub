@@ -34,9 +34,16 @@ function setCache(domain: string, url: string) {
   }
 }
 
-export function useFavicon(url: string) {
+export function useFavicon(url: string, iconUrl?: string | null) {
   const faviconUrl = ref<string>('')
   const loaded = ref(false)
+
+  // If a custom icon URL is provided, use it directly
+  if (iconUrl) {
+    faviconUrl.value = iconUrl
+    loaded.value = true
+    return { faviconUrl, loaded }
+  }
 
   try {
     const domain = new URL(url).hostname

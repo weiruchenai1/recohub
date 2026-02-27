@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
-import { ApiRequestError } from '@/lib/api'
+import { api, ApiRequestError } from '@/lib/api'
+import type { IconInfo } from '@/types'
 
 const ui = useUiStore()
 const auth = useAuthStore()
@@ -12,6 +13,7 @@ const sidebarItems = [
   { key: 'account', label: '我的账号', icon: 'user' },
   { key: 'personalize', label: '个性化设置', icon: 'palette' },
   { key: 'groups', label: '分组管理', icon: 'folder' },
+  { key: 'icons', label: '图标管理', icon: 'image' },
 ]
 
 const activeTab = computed(() => ui.settingsTab)
@@ -84,6 +86,45 @@ const wallpaperPresets = [
   { label: '渐变暖橙', value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
   { label: '渐变深空', value: 'linear-gradient(135deg, #0c0c1d 0%, #1a1a3e 50%, #0c0c1d 100%)' },
 ]
+
+// --- Icon management ---
+const icons = ref<IconInfo[]>([])
+const iconsLoading = ref(false)
+
+async function fetchIcons() {
+  iconsLoading.value = true
+  try {
+    icons.value = await api.get<IconInfo[]>('/icons')
+  } catch {
+    icons.value = []
+  } finally {
+    iconsLoading.value = false
+  }
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B'
+  return (bytes / 1024).toFixed(1) + ' KB'
+}
+
+async function deleteIcon(icon: IconInfo) {
+  ui.requireAuthOrLogin(() => {
+    ui.confirm('删除图标', '确定删除该图标？如果有条目正在使用，将恢复为自动获取。', async () => {
+      try {
+        await api.delete(`/icons/${encodeURIComponent(icon.key)}`)
+        icons.value = icons.value.filter(i => i.key !== icon.key)
+      } catch {
+        // silently fail
+      }
+    })
+  }, auth.isLoggedIn)
+}
+
+watch(activeTab, (tab) => {
+  if (tab === 'icons') {
+    fetchIcons()
+  }
+})
 </script>
 
 <template>
@@ -120,6 +161,12 @@ const wallpaperPresets = [
             <!-- folder -->
             <svg v-else-if="item.icon === 'folder'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <!-- image -->
+            <svg v-else-if="item.icon === 'image'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
             </svg>
             <span>{{ item.label }}</span>
           </button>
@@ -294,6 +341,52 @@ const wallpaperPresets = [
             </div>
           </div>
         </div>
+
+        <!-- Icon management -->
+        <div v-else-if="activeTab === 'icons'" class="settings-panel">
+          <h2 class="settings-title">
+            图标管理
+            <button
+              class="ml-3 p-1 rounded-lg bg-transparent border-none cursor-pointer text-note hover:text-text transition-colors align-middle"
+              title="刷新"
+              :disabled="iconsLoading"
+              @click="fetchIcons"
+            >
+              <svg class="w-4 h-4 icon-stroke" :class="iconsLoading && 'animate-spin'" viewBox="0 0 24 24" fill="none">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+            </button>
+          </h2>
+
+          <div v-if="iconsLoading && icons.length === 0" class="text-sm text-note">
+            加载中...
+          </div>
+
+          <div v-else-if="icons.length === 0" class="text-sm text-note">
+            暂无已上传的图标
+          </div>
+
+          <div v-else class="icon-grid">
+            <div v-for="icon in icons" :key="icon.key" class="icon-card">
+              <img :src="icon.url" alt="" class="w-10 h-10 rounded-lg object-contain" />
+              <div class="flex-1 min-w-0">
+                <div class="text-xs text-text truncate" :title="icon.key">{{ icon.key }}</div>
+                <div class="text-[11px] text-note">{{ formatSize(icon.size) }}</div>
+              </div>
+              <button
+                class="group-action-btn hover:!text-danger shrink-0"
+                title="删除"
+                @click="deleteIcon(icon)"
+              >
+                <svg class="w-4 h-4 icon-stroke" viewBox="0 0 24 24" fill="none">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -453,6 +546,26 @@ const wallpaperPresets = [
 .group-action-btn:hover:not(:disabled) {
   color: var(--text-color);
   background-color: var(--search-bg);
+}
+
+/* Icon management */
+.icon-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.icon-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--search-bg);
+  transition: background-color 0.15s;
+}
+.icon-card:hover {
+  background-color: var(--header-bg);
 }
 
 @media (max-width: 640px) {
