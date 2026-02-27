@@ -15,17 +15,57 @@ function unauthorized() {
   })
 }
 
+// -- Schema version & migrations --
+
+interface Migration {
+  version: number
+  description: string
+  run: (db: D1Database) => Promise<void>
+}
+
+const migrations: Migration[] = [
+  {
+    version: 1,
+    description: 'Remove CHECK constraint on category column (table rebuild)',
+    async run(db) {
+      await db.batch([
+        db.prepare(`CREATE TABLE items_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category TEXT NOT NULL,
+          name TEXT NOT NULL,
+          url TEXT NOT NULL,
+          note TEXT DEFAULT '',
+          sort_order INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(category, url)
+        )`),
+        db.prepare(`INSERT INTO items_new SELECT * FROM items`),
+        db.prepare(`DROP TABLE items`),
+        db.prepare(`ALTER TABLE items_new RENAME TO items`),
+        db.prepare(`CREATE INDEX IF NOT EXISTS idx_items_category ON items(category)`),
+        db.prepare(`CREATE INDEX IF NOT EXISTS idx_items_sort_order ON items(sort_order)`),
+      ])
+    },
+  },
+]
+
+const LATEST_VERSION = migrations.length > 0 ? migrations[migrations.length - 1].version : 0
+
 let dbInitialized = false
 
 async function ensureDB(db: D1Database) {
   if (dbInitialized) return
 
-  const check = await db.prepare(
+  const hasItems = await db.prepare(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='items'"
   ).first()
 
-  if (!check) {
+  if (!hasItems) {
+    // Fresh database — create tables with latest schema + seed data, skip migrations
     await db.batch([
+      db.prepare(`CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER NOT NULL)`),
+      db.prepare(`INSERT INTO _schema_version (version) VALUES (${LATEST_VERSION})`),
       db.prepare(`CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category TEXT NOT NULL,
@@ -61,6 +101,29 @@ async function ensureDB(db: D1Database) {
       db.prepare(`INSERT OR IGNORE INTO items (category, name, url, note, sort_order) VALUES ('software', '图吧工具箱', 'https://www.tbtool.cn/', '硬件检测工具合集', 20)`),
       db.prepare(`INSERT OR IGNORE INTO items (category, name, url, note, sort_order) VALUES ('website', 'GitHub', 'https://github.com/', '全球最大代码托管平台', 1)`),
     ])
+  } else {
+    // Existing database — ensure _schema_version exists and run pending migrations
+    const hasVersionTable = await db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='_schema_version'"
+    ).first()
+
+    if (!hasVersionTable) {
+      await db.batch([
+        db.prepare(`CREATE TABLE _schema_version (version INTEGER NOT NULL)`),
+        db.prepare(`INSERT INTO _schema_version (version) VALUES (0)`),
+      ])
+    }
+
+    const row = await db.prepare('SELECT version FROM _schema_version LIMIT 1').first<{ version: number }>()
+    let currentVersion = row?.version ?? 0
+
+    const pending = migrations.filter(m => m.version > currentVersion).sort((a, b) => a.version - b.version)
+
+    for (const migration of pending) {
+      await migration.run(db)
+      await db.prepare('UPDATE _schema_version SET version = ?').bind(migration.version).run()
+      currentVersion = migration.version
+    }
   }
 
   dbInitialized = true

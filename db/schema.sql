@@ -1,3 +1,7 @@
+CREATE TABLE IF NOT EXISTS _schema_version (
+    version INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category TEXT NOT NULL,
