@@ -3,7 +3,6 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
-import { CATEGORY_OPTIONS } from '@/types'
 import type { Category } from '@/types'
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -18,7 +17,7 @@ const showMoveMenu = ref(false)
 const moveMenuRef = ref<HTMLElement | null>(null)
 
 const moveTargets = computed(() =>
-  CATEGORY_OPTIONS.filter(opt => opt.key !== ui.activeTab)
+  ui.categoryOptions.filter(opt => opt.key !== ui.activeTab)
 )
 
 async function handleRename() {

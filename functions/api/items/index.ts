@@ -69,6 +69,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
+  try {
+    const parsed = new URL(body.url)
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error()
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const existing = await context.env.DB.prepare(
     'SELECT id FROM items WHERE category = ? AND url = ?'
   )

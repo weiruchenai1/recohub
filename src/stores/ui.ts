@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import type { Category, ViewLayout } from '@/types'
+import { ref, computed, watch } from 'vue'
+import type { Category, CategoryOption, ViewLayout } from '@/types'
+import { DEFAULT_CATEGORIES } from '@/types'
 
 export const useUiStore = defineStore('ui', () => {
   const theme = ref<'light' | 'dark'>(
@@ -8,7 +9,7 @@ export const useUiStore = defineStore('ui', () => {
     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
   )
   const layout = ref<ViewLayout>((localStorage.getItem('layout') as ViewLayout) || 'list')
-  const activeTab = ref<Category>((localStorage.getItem('activeTab') as Category) || 'software')
+  const activeTab = ref<Category>(localStorage.getItem('activeTab') || 'software')
   const checklistEnabled = ref(localStorage.getItem('checklistEnabled') === 'true')
   const globalSearch = ref('')
   const localSearch = ref('')
@@ -23,6 +24,47 @@ export const useUiStore = defineStore('ui', () => {
   const confirmTitle = ref('')
   const confirmMessage = ref('')
   const confirmCallback = ref<(() => void) | null>(null)
+
+  // Settings modal
+  const showSettingsModal = ref(false)
+  const settingsTab = ref('account')
+
+  // Personalization
+  const logoVisible = ref(localStorage.getItem('logoVisible') !== 'false')
+  const logoText = ref(localStorage.getItem('logoText') || 'RecoHub')
+  const wallpaper = ref(localStorage.getItem('wallpaper') || '')
+
+  // Dynamic categories
+  const categories = ref<CategoryOption[]>(
+    JSON.parse(localStorage.getItem('categories') || 'null') || DEFAULT_CATEGORIES
+  )
+
+  const categoryOptions = computed(() => categories.value)
+
+  function addCategory(key: string, label: string) {
+    categories.value = [...categories.value, { key, label }]
+  }
+
+  function removeCategory(index: number) {
+    const removed = categories.value[index]
+    categories.value = categories.value.filter((_, i) => i !== index)
+    if (removed && activeTab.value === removed.key && categories.value.length > 0) {
+      activeTab.value = categories.value[0]!.key
+    }
+  }
+
+  function updateCategory(index: number, label: string) {
+    const item = categories.value[index]
+    if (!item) return
+    const updated = [...categories.value]
+    updated[index] = { ...item, label }
+    categories.value = updated
+  }
+
+  function openSettings(tab = 'account') {
+    settingsTab.value = tab
+    showSettingsModal.value = true
+  }
 
   function confirm(title: string, message: string, onConfirm: () => void) {
     confirmTitle.value = title
@@ -81,12 +123,20 @@ export const useUiStore = defineStore('ui', () => {
   watch(activeTab, (v) => localStorage.setItem('activeTab', v))
   watch(checklistEnabled, (v) => localStorage.setItem('checklistEnabled', String(v)))
   watch(perPage, (v) => localStorage.setItem('perPage', String(v)))
+  watch(logoVisible, (v) => localStorage.setItem('logoVisible', String(v)))
+  watch(logoText, (v) => localStorage.setItem('logoText', v))
+  watch(wallpaper, (v) => localStorage.setItem('wallpaper', v))
+  watch(categories, (v) => localStorage.setItem('categories', JSON.stringify(v)), { deep: true })
 
   return {
     theme, layout, activeTab, checklistEnabled,
     globalSearch, localSearch, page, perPage,
     showLoginModal, showItemModal, pendingAction,
     showConfirmDialog, confirmTitle, confirmMessage,
+    showSettingsModal, settingsTab,
+    logoVisible, logoText, wallpaper,
+    categories, categoryOptions,
+    addCategory, removeCategory, updateCategory, openSettings,
     confirm, resolveConfirm, cancelConfirm,
     toggleTheme, setTab, requireAuthOrLogin, onLoginSuccess,
   }

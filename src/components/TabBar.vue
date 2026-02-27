@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { useUiStore } from '@/stores/ui'
-import { CATEGORY_OPTIONS } from '@/types'
 
 const ui = useUiStore()
 </script>
 
 <template>
-  <div class="flex items-center border-b border-border">
-    <div class="flex">
+  <div class="overflow-x-auto border-b border-border [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
+    <div class="flex w-max">
       <button
-        v-for="tab in CATEGORY_OPTIONS"
+        v-for="tab in ui.categoryOptions"
         :key="tab.key"
         @click="ui.setTab(tab.key)"
         class="tab-btn"

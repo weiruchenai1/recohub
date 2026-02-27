@@ -6,7 +6,7 @@ const ui = useUiStore()
 
 <template>
   <div
-    class="fixed inset-0 z-[2000] flex items-center justify-center transition-opacity duration-[250ms] bg-overlay"
+    class="fixed inset-0 z-[3000] flex items-center justify-center transition-opacity duration-[250ms] bg-overlay"
     @click.self="ui.cancelConfirm()"
   >
     <div class="w-[420px] max-w-[92vw] rounded-2xl p-7 border-none bg-row">

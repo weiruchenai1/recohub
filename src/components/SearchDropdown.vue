@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, toRef, onMounted, onBeforeUnmount } from 'vue'
 import { api } from '@/lib/api'
+import { useDebouncedRef } from '@/composables/useDebounce'
 import type { Item, PaginatedResponse } from '@/types'
 
 const props = defineProps<{
@@ -14,9 +15,10 @@ const emit = defineEmits<{
 
 const el = ref<HTMLElement | null>(null)
 const results = ref<Item[]>([])
+const debouncedKeyword = useDebouncedRef(toRef(props, 'keyword'), 300)
 
 watch(
-  () => props.keyword,
+  debouncedKeyword,
   async (kw) => {
     const q = kw.trim()
     if (!q) { results.value = []; return }

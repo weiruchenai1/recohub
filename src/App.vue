@@ -10,6 +10,7 @@ import FloatingToolbar from '@/components/FloatingToolbar.vue'
 import ItemModal from '@/components/ItemModal.vue'
 import LoginModal from '@/components/LoginModal.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import SettingsModal from '@/components/SettingsModal.vue'
 import { useUiStore } from '@/stores/ui'
 import { useItemsStore } from '@/stores/items'
 import { useDebouncedRef } from '@/composables/useDebounce'
@@ -39,8 +40,15 @@ watch(
 </script>
 
 <template>
+  <!-- Wallpaper layer -->
+  <div
+    v-if="ui.wallpaper"
+    class="fixed inset-0 z-0 transition-[background] duration-500"
+    :style="{ background: ui.wallpaper }"
+  ></div>
+
   <Navbar />
-  <div class="max-w-[1200px] mx-auto w-[95%]">
+  <div class="max-w-[1200px] mx-auto w-[95%] relative z-[1]">
     <TabBar />
     <Toolbar @refresh="loadItems" />
 
@@ -68,4 +76,5 @@ watch(
   <ItemModal v-if="ui.showItemModal" @close="ui.showItemModal = false" @saved="loadItems" />
   <LoginModal v-if="ui.showLoginModal" @close="ui.showLoginModal = false" />
   <ConfirmDialog v-if="ui.showConfirmDialog" />
+  <SettingsModal v-if="ui.showSettingsModal" />
 </template>

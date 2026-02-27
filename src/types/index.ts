@@ -1,6 +1,11 @@
-export type Category = 'software' | 'website'
+export type Category = string
 
-export const CATEGORY_OPTIONS: { key: Category; label: string }[] = [
+export interface CategoryOption {
+  key: string
+  label: string
+}
+
+export const DEFAULT_CATEGORIES: CategoryOption[] = [
   { key: 'software', label: '软件推荐' },
   { key: 'website', label: '网站推荐' },
 ]

@@ -14,6 +14,7 @@ RecoHub 提供了一个简洁美观的界面，用于组织和分享精选的软
 | 状态管理 | Pinia |
 | 构建工具 | Vite 7 |
 | CSS 方案 | Tailwind CSS 4 |
+| 拖拽排序 | vue-draggable-plus (SortableJS) |
 | 后端 | Cloudflare Pages Functions (Serverless) |
 | 数据库 | Cloudflare D1 (SQLite) |
 | 认证 | JWT (jose) |
@@ -25,8 +26,9 @@ RecoHub 提供了一个简洁美观的界面，用于组织和分享精选的软
 recohub/
 ├── src/                          # 前端源码
 │   ├── components/               # Vue 组件
-│   │   ├── Navbar.vue            # 顶部导航栏（全局搜索、主题切换）
-│   │   ├── TabBar.vue            # 分类标签栏（软件/网站）
+│   │   ├── Navbar.vue            # 顶部导航栏（全局搜索、主题切换、账号菜单）
+│   │   ├── AccountDropdown.vue   # 账号下拉菜单
+│   │   ├── TabBar.vue            # 分类标签栏（动态分组）
 │   │   ├── Toolbar.vue           # 工具栏（搜索、添加、视图切换）
 │   │   ├── ItemTable.vue         # 列表视图容器
 │   │   ├── ItemTableRow.vue      # 列表行组件
@@ -34,10 +36,11 @@ recohub/
 │   │   ├── ItemGridCard.vue      # 网格卡片组件
 │   │   ├── ItemModal.vue         # 新增/编辑弹窗
 │   │   ├── LoginModal.vue        # 登录弹窗
+│   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理）
 │   │   ├── SearchDropdown.vue    # 搜索下拉结果
 │   │   ├── PaginationBar.vue     # 分页控件
 │   │   ├── FloatingToolbar.vue   # 浮动批量操作栏
-│   │   ├── ConfirmDialog.vue    # 自定义确认弹窗
+│   │   ├── ConfirmDialog.vue     # 自定义确认弹窗
 │   │   ├── ThemeToggle.vue       # 主题切换按钮
 │   │   └── CustomCheckbox.vue    # 自定义复选框
 │   ├── stores/                   # Pinia 状态管理
@@ -80,8 +83,9 @@ recohub/
 ### 已完成功能
 
 - [x] **数据管理** - 推荐条目的增删改查（CRUD）
-- [x] **分类浏览** - 软件推荐 / 网站推荐两大分类，标签切换
-- [x] **全局搜索** - 跨分类实时搜索，独立请求后端，支持名称、URL、备注模糊匹配
+- [x] **分类浏览** - 动态分组管理，可自由添加、删除、重命名分组，标签切换
+- [x] **分组拖拽排序** - 基于 vue-draggable-plus 的拖拽排序，支持拖拽手柄、动画过渡
+- [x] **全局搜索** - 跨分类实时搜索，独立请求后端，支持名称、URL、备注模糊匹配，防抖优化
 - [x] **局部搜索** - 当前分类内搜索过滤
 - [x] **双视图模式** - 列表视图（表格）与网格视图（卡片），偏好持久化
 - [x] **分页功能** - 可配置每页条数（10/20/50/100），智能分页导航，切换无闪烁
@@ -91,17 +95,20 @@ recohub/
 - [x] **明暗主题** - 亮色/暗色主题切换，跟随系统偏好，持久化存储
 - [x] **Favicon 展示** - 自动获取网站图标（Google S2 API + 降级方案），本地缓存7天
 - [x] **响应式布局** - 适配桌面端与移动端
-- [x] **状态持久化** - UI 偏好（主题、布局、分页等）保存到 localStorage
+- [x] **状态持久化** - UI 偏好（主题、布局、分页、分组顺序等）保存到 localStorage
+- [x] **个性化设置** - 可配置 LOGO 显示/隐藏、自定义文本、壁纸主题切换
+- [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理
+- [x] **账号菜单** - 导航栏用户图标，登录后显示下拉菜单快速访问设置
+- [x] **URL 校验** - 后端 API 新增/编辑时校验 URL 格式，仅允许 http/https 协议
 - [x] **后端 API** - 完整的 RESTful API，含认证中间件
 - [x] **数据库设计** - D1 数据库表结构、索引与唯一约束（防重复插入）
 
 ### 待完成/可扩展
 
-- [ ] 拖拽排序功能（sort_order 字段已预留）
 - [ ] 国际化（i18n）支持
 - [ ] 数据导入/导出
 - [ ] 用户注册与多用户支持
-- [ ] 标签/分组系统
+- [ ] 标签系统
 - [ ] 评分/评论功能
 
 ## API 接口
