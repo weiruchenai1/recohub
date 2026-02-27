@@ -31,7 +31,7 @@ function goTo(p: number) {
 
 <template>
   <div
-    class="flex items-center justify-between py-3.5 text-[13px] select-none text-note"
+    class="flex flex-wrap items-center justify-between gap-y-2 py-3.5 text-[13px] select-none text-note"
   >
     <!-- Left: total + per page -->
     <div class="flex items-center gap-1.5">
@@ -47,7 +47,7 @@ function goTo(p: number) {
     </div>
 
     <!-- Right: page buttons -->
-    <div class="flex items-center gap-1">
+    <div class="flex items-center gap-1 ml-auto">
       <!-- Prev -->
       <button
         :disabled="ui.page <= 1"
