@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { api } from '@/lib/api'
 import type { Category, CategoryOption, ViewLayout } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/types'
 
@@ -34,31 +35,65 @@ export const useUiStore = defineStore('ui', () => {
   const logoText = ref(localStorage.getItem('logoText') || 'RecoHub')
   const wallpaper = ref(localStorage.getItem('wallpaper') || '')
 
-  // Dynamic categories
-  const categories = ref<CategoryOption[]>(
-    JSON.parse(localStorage.getItem('categories') || 'null') || DEFAULT_CATEGORIES
-  )
+  // Dynamic categories — loaded from backend, fallback to defaults
+  const categories = ref<CategoryOption[]>(DEFAULT_CATEGORIES)
+  const categoriesLoaded = ref(false)
 
   const categoryOptions = computed(() => categories.value)
 
-  function addCategory(key: string, label: string) {
-    categories.value = [...categories.value, { key, label }]
+  async function fetchCategories() {
+    try {
+      const data = await api.get<CategoryOption[]>('/categories')
+      if (data && data.length > 0) {
+        categories.value = data
+      }
+      categoriesLoaded.value = true
+    } catch {
+      // On failure, keep current value (defaults on first load)
+      categoriesLoaded.value = true
+    }
   }
 
-  function removeCategory(index: number) {
+  async function addCategory(key: string, label: string) {
+    try {
+      const created = await api.post<CategoryOption>('/categories', { key, label })
+      categories.value = [...categories.value, created]
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function removeCategory(index: number) {
     const removed = categories.value[index]
+    if (!removed) return
+    await api.delete(`/categories/${removed.key}`)
     categories.value = categories.value.filter((_, i) => i !== index)
-    if (removed && activeTab.value === removed.key && categories.value.length > 0) {
+    if (activeTab.value === removed.key && categories.value.length > 0) {
       activeTab.value = categories.value[0]!.key
     }
   }
 
-  function updateCategory(index: number, label: string) {
+  async function updateCategory(index: number, label: string) {
     const item = categories.value[index]
     if (!item) return
     const updated = [...categories.value]
     updated[index] = { ...item, label }
     categories.value = updated
+    await syncCategories()
+  }
+
+  async function syncCategories() {
+    try {
+      await api.put('/categories', {
+        categories: categories.value.map((cat, i) => ({
+          key: cat.key,
+          label: cat.label,
+          sort_order: i,
+        })),
+      })
+    } catch {
+      // silently fail
+    }
   }
 
   function openSettings(tab = 'account') {
@@ -113,7 +148,7 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
-  // Persist to localStorage
+  // Persist to localStorage (only UI preferences, not categories)
   watch(theme, (v) => {
     localStorage.setItem('theme', v)
     document.documentElement.classList.toggle('dark', v === 'dark')
@@ -126,7 +161,6 @@ export const useUiStore = defineStore('ui', () => {
   watch(logoVisible, (v) => localStorage.setItem('logoVisible', String(v)))
   watch(logoText, (v) => localStorage.setItem('logoText', v))
   watch(wallpaper, (v) => localStorage.setItem('wallpaper', v))
-  watch(categories, (v) => localStorage.setItem('categories', JSON.stringify(v)), { deep: true })
 
   return {
     theme, layout, activeTab, checklistEnabled,
@@ -135,8 +169,9 @@ export const useUiStore = defineStore('ui', () => {
     showConfirmDialog, confirmTitle, confirmMessage,
     showSettingsModal, settingsTab,
     logoVisible, logoText, wallpaper,
-    categories, categoryOptions,
-    addCategory, removeCategory, updateCategory, openSettings,
+    categories, categoryOptions, categoriesLoaded,
+    fetchCategories, addCategory, removeCategory, updateCategory, syncCategories,
+    openSettings,
     confirm, resolveConfirm, cancelConfirm,
     toggleTheme, setTab, requireAuthOrLogin, onLoginSuccess,
   }

@@ -3,8 +3,7 @@ import { ref, computed } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
-import { api } from '@/lib/api'
-import type { PaginatedResponse, Item } from '@/types'
+import { ApiRequestError } from '@/lib/api'
 
 const ui = useUiStore()
 const auth = useAuthStore()
@@ -31,12 +30,12 @@ const LOGO_TEXT_MAX = 20
 // --- Group management ---
 const newGroupLabel = ref('')
 
-function addGroup() {
+async function addGroup() {
   const label = newGroupLabel.value.trim()
   if (!label) return
   const key = label.toLowerCase().replace(/\s+/g, '-')
   if (ui.categories.some(c => c.key === key)) return
-  ui.addCategory(key, label)
+  await ui.addCategory(key, label)
   newGroupLabel.value = ''
 }
 
@@ -50,30 +49,25 @@ async function removeGroup(index: number) {
   const cat = ui.categories[index]
   if (!cat) return
 
-  // Check if the group has items
-  let res: PaginatedResponse<Item>
-  try {
-    const query = new URLSearchParams({ category: cat.key, page: '1', perPage: '1' })
-    res = await api.get<PaginatedResponse<Item>>(`/items?${query}`)
-  } catch {
-    groupErrorIndex.value = index
-    groupError.value = '无法检查分组内容，请检查网络连接'
-    groupErrorTimer = setTimeout(() => { groupError.value = ''; groupErrorIndex.value = -1 }, 3000)
-    return
-  }
-
-  if (res.total > 0) {
-    groupErrorIndex.value = index
-    groupError.value = `分组「${cat.label}」下还有 ${res.total} 条内容，请先删除后再移除分组`
-    groupErrorTimer = setTimeout(() => { groupError.value = ''; groupErrorIndex.value = -1 }, 3000)
-    return
-  }
-
-  ui.confirm('删除分组', `确定删除分组「${cat.label}」？`, () => {
-    ui.removeCategory(index)
-    groupError.value = ''
-    groupErrorIndex.value = -1
+  ui.confirm('删除分组', `确定删除分组「${cat.label}」？`, async () => {
+    try {
+      await ui.removeCategory(index)
+      groupError.value = ''
+      groupErrorIndex.value = -1
+    } catch (e) {
+      groupErrorIndex.value = index
+      if (e instanceof ApiRequestError && e.status === 409) {
+        groupError.value = e.message
+      } else {
+        groupError.value = '删除失败，请检查网络连接'
+      }
+      groupErrorTimer = setTimeout(() => { groupError.value = ''; groupErrorIndex.value = -1 }, 3000)
+    }
   })
+}
+
+function onDragEnd() {
+  ui.syncCategories()
 }
 
 // --- Wallpaper presets ---
@@ -238,6 +232,7 @@ const wallpaperPresets = [
               ghost-class="group-item-ghost"
               drag-class="group-item-drag"
               class="flex flex-col gap-1.5 mt-2"
+              @end="onDragEnd"
             >
               <div v-for="(cat, index) in ui.categories" :key="cat.key" class="group-item-wrapper">
                 <div class="group-item">

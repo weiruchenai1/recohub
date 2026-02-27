@@ -72,11 +72,19 @@ export const useItemsStore = defineStore('items', () => {
   }
 
   function toggleSelectAll() {
+    const s = new Set(selectedIds.value)
     if (allSelected.value) {
-      selectedIds.value = new Set()
+      // Only remove current page items from selection
+      for (const item of items.value) {
+        s.delete(item.id)
+      }
     } else {
-      selectedIds.value = new Set(items.value.map(i => i.id))
+      // Add current page items to selection
+      for (const item of items.value) {
+        s.add(item.id)
+      }
     }
+    selectedIds.value = s
   }
 
   function clearSelection() {

@@ -18,6 +18,9 @@ import { useDebouncedRef } from '@/composables/useDebounce'
 const ui = useUiStore()
 const items = useItemsStore()
 
+// Load categories from backend on startup
+ui.fetchCategories()
+
 const debouncedLocal = useDebouncedRef(toRef(ui, 'localSearch'), 300)
 
 function loadItems() {
@@ -30,13 +33,17 @@ function loadItems() {
 }
 
 watch(
-  () => [ui.activeTab, ui.page, ui.perPage, debouncedLocal.value],
+  () => [ui.activeTab, ui.perPage, debouncedLocal.value],
   () => {
     items.clearSelection()
     loadItems()
   },
   { immediate: true },
 )
+
+watch(() => ui.page, () => {
+  loadItems()
+})
 </script>
 
 <template>

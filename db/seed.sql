@@ -1,3 +1,7 @@
+INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES
+('software', '软件推荐', 0),
+('website', '网站推荐', 1);
+
 INSERT OR IGNORE INTO items (category, name, url, note, sort_order) VALUES
 ('software', '7-Zip', 'https://www.7-zip.org/', '开源免费解压缩软件', 1),
 ('software', 'Cherry Studio', 'https://www.cherry-ai.com/', '多模型 AI 客户端', 2),

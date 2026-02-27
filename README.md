@@ -45,7 +45,7 @@ recohub/
 │   │   └── CustomCheckbox.vue    # 自定义复选框
 │   ├── stores/                   # Pinia 状态管理
 │   │   ├── auth.ts               # 认证状态
-│   │   ├── ui.ts                 # UI 状态（主题、布局、分页等）
+│   │   ├── ui.ts                 # UI 状态（主题、布局、分类管理等）
 │   │   └── items.ts              # 数据状态（列表增删改查）
 │   ├── composables/              # 组合式函数
 │   │   ├── useFavicon.ts         # Favicon 获取与缓存
@@ -61,8 +61,11 @@ recohub/
 │
 ├── functions/                    # 后端 API（Cloudflare Pages Functions）
 │   └── api/
-│       ├── _middleware.ts        # JWT 认证中间件
+│       ├── _middleware.ts        # JWT 认证中间件 + 数据库初始化/迁移
 │       ├── login.ts              # 登录接口
+│       ├── categories/
+│       │   ├── index.ts          # 分类列表 / 新增 / 批量更新排序
+│       │   └── [key].ts          # 删除分类
 │       └── items/
 │           ├── index.ts          # 列表查询 / 新增
 │           ├── [id].ts           # 单条编辑 / 删除
@@ -70,7 +73,8 @@ recohub/
 │
 ├── db/                           # 数据库
 │   ├── schema.sql                # 表结构定义
-│   └── seed.sql                  # 初始种子数据
+│   ├── seed.sql                  # 初始种子数据
+│   └── migrate.sql               # 独立迁移脚本（可通过 wrangler d1 execute 运行）
 │
 ├── wrangler.toml                 # Cloudflare 配置
 ├── vite.config.ts                # Vite 构建配置
@@ -83,8 +87,8 @@ recohub/
 ### 已完成功能
 
 - [x] **数据管理** - 推荐条目的增删改查（CRUD）
-- [x] **分类浏览** - 动态分组管理，可自由添加、删除、重命名分组，标签切换
-- [x] **分组拖拽排序** - 基于 vue-draggable-plus 的拖拽排序，支持拖拽手柄、动画过渡
+- [x] **分类浏览** - 动态分组管理，可自由添加、删除、重命名分组，标签切换，分类数据存储在 D1 数据库中支持多端同步
+- [x] **分组拖拽排序** - 基于 vue-draggable-plus 的拖拽排序，支持拖拽手柄、动画过渡，排序自动同步到后端
 - [x] **全局搜索** - 跨分类实时搜索，独立请求后端，支持名称、URL、备注模糊匹配，防抖优化
 - [x] **局部搜索** - 当前分类内搜索过滤
 - [x] **双视图模式** - 列表视图（表格）与网格视图（卡片），偏好持久化
@@ -93,9 +97,9 @@ recohub/
 - [x] **浮动操作栏** - 选中条目后显示浮动工具栏，支持编辑/移动/删除/取消
 - [x] **用户认证** - 密码登录，JWT Token 鉴权（7天有效期）
 - [x] **明暗主题** - 亮色/暗色主题切换，跟随系统偏好，持久化存储
-- [x] **Favicon 展示** - 自动获取网站图标（Google S2 API + 降级方案），本地缓存7天
+- [x] **Favicon 展示** - 自动获取网站图标（Google S2 API + 降级方案），本地缓存7天，加载失败显示首字母占位图标
 - [x] **响应式布局** - 适配桌面端与移动端
-- [x] **状态持久化** - UI 偏好（主题、布局、分页、分组顺序等）保存到 localStorage
+- [x] **状态持久化** - UI 偏好（主题、布局、分页等）保存到 localStorage，分类配置存储在后端数据库
 - [x] **个性化设置** - 可配置 LOGO 显示/隐藏、自定义文本、壁纸主题切换
 - [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理
 - [x] **账号菜单** - 导航栏用户图标，登录后显示下拉菜单快速访问设置
@@ -116,6 +120,10 @@ recohub/
 | 方法 | 路径 | 说明 | 鉴权 |
 |------|------|------|------|
 | `POST` | `/api/login` | 登录获取 Token | 否 |
+| `GET` | `/api/categories` | 获取所有分类（按排序返回） | 否 |
+| `POST` | `/api/categories` | 新增分类 | 是 |
+| `PUT` | `/api/categories` | 批量更新分类（重命名/排序） | 是 |
+| `DELETE` | `/api/categories/:key` | 删除分类（分类下有条目时返回 409） | 是 |
 | `GET` | `/api/items` | 获取列表（支持分页、搜索、分类筛选，category 可选） | 否 |
 | `POST` | `/api/items` | 新增条目（自动去重，同分类同 URL 返回 409） | 是 |
 | `PUT` | `/api/items/:id` | 编辑条目 | 是 |
@@ -136,6 +144,13 @@ npm install
 ```
 
 ### 初始化本地数据库
+
+```bash
+npm run db:migrate:local
+npm run db:seed:local
+```
+
+也可以手动执行：
 
 ```bash
 npx wrangler d1 execute recohub-db --local --file=db/schema.sql

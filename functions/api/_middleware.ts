@@ -48,6 +48,35 @@ const migrations: Migration[] = [
       ])
     },
   },
+  {
+    version: 2,
+    description: 'Create categories table and populate from existing data',
+    async run(db) {
+      await db.batch([
+        db.prepare(`CREATE TABLE IF NOT EXISTS categories (
+          key TEXT PRIMARY KEY,
+          label TEXT NOT NULL,
+          sort_order INTEGER DEFAULT 0
+        )`),
+        // Seed default categories
+        db.prepare(`INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES ('software', '软件推荐', 0)`),
+        db.prepare(`INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES ('website', '网站推荐', 1)`),
+      ])
+      // Also insert any categories that exist in items but not yet in categories table
+      const rows = await db.prepare(
+        `SELECT DISTINCT category FROM items WHERE category NOT IN (SELECT key FROM categories)`
+      ).all<{ category: string }>()
+      if (rows.results.length > 0) {
+        const maxOrder = await db.prepare('SELECT COALESCE(MAX(sort_order), -1) as m FROM categories').first<{ m: number }>()
+        let order = (maxOrder?.m ?? -1) + 1
+        for (const row of rows.results) {
+          await db.prepare('INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES (?, ?, ?)')
+            .bind(row.category, row.category, order++)
+            .run()
+        }
+      }
+    },
+  },
 ]
 
 const LATEST_VERSION = migrations.length > 0 ? migrations[migrations.length - 1].version : 0
@@ -66,6 +95,13 @@ async function ensureDB(db: D1Database) {
     await db.batch([
       db.prepare(`CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER NOT NULL)`),
       db.prepare(`INSERT INTO _schema_version (version) VALUES (${LATEST_VERSION})`),
+      db.prepare(`CREATE TABLE IF NOT EXISTS categories (
+        key TEXT PRIMARY KEY,
+        label TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0
+      )`),
+      db.prepare(`INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES ('software', '软件推荐', 0)`),
+      db.prepare(`INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES ('website', '网站推荐', 1)`),
       db.prepare(`CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category TEXT NOT NULL,

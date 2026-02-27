@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useFavicon } from '@/composables/useFavicon'
 import CustomCheckbox from '@/components/CustomCheckbox.vue'
 import { useItemsStore } from '@/stores/items'
@@ -17,6 +18,7 @@ const emit = defineEmits<{
 const items = useItemsStore()
 const ui = useUiStore()
 const { faviconUrl } = useFavicon(props.item.url)
+const faviconFailed = ref(false)
 
 function displayUrl(url: string): string {
   try { return new URL(url).hostname } catch { return url }
@@ -49,11 +51,11 @@ function firstChar(): string {
     <!-- Name with favicon -->
     <div class="flex items-center gap-2.5 text-[15px] font-semibold mb-2 pr-7 break-words text-text">
       <img
-        v-if="faviconUrl"
+        v-if="faviconUrl && !faviconFailed"
         :src="faviconUrl"
         alt=""
         class="w-8 h-8 rounded-md shrink-0 object-contain"
-        @error="($event.target as HTMLImageElement).style.display='none'"
+        @error="faviconFailed = true"
       />
       <div
         v-else

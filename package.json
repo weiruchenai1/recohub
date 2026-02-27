@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:migrate": "wrangler d1 execute recohub-db --remote --file=db/migrate.sql",
+    "db:migrate:local": "wrangler d1 execute recohub-db --local --file=db/migrate.sql",
+    "db:seed": "wrangler d1 execute recohub-db --remote --file=db/seed.sql",
+    "db:seed:local": "wrangler d1 execute recohub-db --local --file=db/seed.sql"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
