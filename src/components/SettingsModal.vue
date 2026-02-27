@@ -35,8 +35,10 @@ async function addGroup() {
   if (!label) return
   const key = label.toLowerCase().replace(/\s+/g, '-')
   if (ui.categories.some(c => c.key === key)) return
-  await ui.addCategory(key, label)
-  newGroupLabel.value = ''
+  ui.requireAuthOrLogin(async () => {
+    await ui.addCategory(key, label)
+    newGroupLabel.value = ''
+  }, auth.isLoggedIn)
 }
 
 const groupError = ref('')
@@ -49,25 +51,29 @@ async function removeGroup(index: number) {
   const cat = ui.categories[index]
   if (!cat) return
 
-  ui.confirm('删除分组', `确定删除分组「${cat.label}」？`, async () => {
-    try {
-      await ui.removeCategory(index)
-      groupError.value = ''
-      groupErrorIndex.value = -1
-    } catch (e) {
-      groupErrorIndex.value = index
-      if (e instanceof ApiRequestError && e.status === 409) {
-        groupError.value = e.message
-      } else {
-        groupError.value = '删除失败，请检查网络连接'
+  ui.requireAuthOrLogin(() => {
+    ui.confirm('删除分组', `确定删除分组「${cat.label}」？`, async () => {
+      try {
+        await ui.removeCategory(index)
+        groupError.value = ''
+        groupErrorIndex.value = -1
+      } catch (e) {
+        groupErrorIndex.value = index
+        if (e instanceof ApiRequestError && e.status === 409) {
+          groupError.value = e.message
+        } else {
+          groupError.value = '删除失败，请检查网络连接'
+        }
+        groupErrorTimer = setTimeout(() => { groupError.value = ''; groupErrorIndex.value = -1 }, 3000)
       }
-      groupErrorTimer = setTimeout(() => { groupError.value = ''; groupErrorIndex.value = -1 }, 3000)
-    }
-  })
+    })
+  }, auth.isLoggedIn)
 }
 
 function onDragEnd() {
-  ui.syncCategories()
+  ui.requireAuthOrLogin(() => {
+    ui.syncCategories()
+  }, auth.isLoggedIn)
 }
 
 // --- Wallpaper presets ---
@@ -279,7 +285,7 @@ const wallpaperPresets = [
                 @keydown.enter="addGroup"
               />
               <button
-                class="px-4 py-2 text-sm font-medium rounded-lg border-none text-white cursor-pointer transition-opacity hover:opacity-85"
+                class="shrink-0 px-4 py-2 text-sm font-medium rounded-lg border-none text-white cursor-pointer transition-opacity hover:opacity-85"
                 :style="{ backgroundColor: 'var(--btn-primary-bg)' }"
                 @click="addGroup"
               >
@@ -463,6 +469,14 @@ const wallpaperPresets = [
     flex-direction: row;
     overflow-x: auto;
     padding: 4px 8px;
+    scrollbar-width: none;
+  }
+  .settings-sidebar nav::-webkit-scrollbar {
+    display: none;
+  }
+  .sidebar-item {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 }
 </style>

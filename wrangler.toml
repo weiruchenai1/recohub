@@ -5,4 +5,4 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "recohub-db"
-database_id = "661575c9-9205-4290-9dc7-eadcd3685b81"
+database_id = "bee123f1-9787-4f4d-8347-44c22306a386"

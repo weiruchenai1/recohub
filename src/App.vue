@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, toRef } from 'vue'
+import { watch, computed, toRef } from 'vue'
 import Navbar from '@/components/Navbar.vue'
 import TabBar from '@/components/TabBar.vue'
 import Toolbar from '@/components/Toolbar.vue'
@@ -20,6 +20,14 @@ const items = useItemsStore()
 
 // Load categories from backend on startup
 ui.fetchCategories()
+
+// Lock body scroll when any modal is open
+const anyModalOpen = computed(() =>
+  ui.showSettingsModal || ui.showItemModal || ui.showLoginModal || ui.showConfirmDialog
+)
+watch(anyModalOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
 
 const debouncedLocal = useDebouncedRef(toRef(ui, 'localSearch'), 300)
 
