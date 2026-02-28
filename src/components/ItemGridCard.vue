@@ -48,6 +48,15 @@ function firstChar(): string {
       />
     </div>
 
+    <!-- Dead badge -->
+    <span
+      v-if="item.status === 'dead'"
+      class="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/15 text-red-500"
+    >
+      <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+      已失效
+    </span>
+
     <!-- Name with favicon -->
     <div class="flex items-center gap-2.5 text-[15px] font-semibold mb-2 pr-7 break-words text-text">
       <img
@@ -71,7 +80,8 @@ function firstChar(): string {
       :href="item.url"
       target="_blank"
       rel="noopener noreferrer"
-      class="text-[13px] font-medium mb-2 break-all text-link"
+      class="text-[13px] font-medium mb-2 break-all"
+      :class="item.status === 'dead' ? 'text-red-500 line-through opacity-60' : 'text-link'"
     >
       {{ displayUrl(item.url) }}
     </a>

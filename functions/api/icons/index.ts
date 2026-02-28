@@ -16,6 +16,14 @@ const ALLOWED_TYPES = new Set([
 
 const MAX_SIZE = 512 * 1024 // 512KB
 
+function getDomain(url: string): string {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url.replace(/[^a-zA-Z0-9.-]/g, '_')
+  }
+}
+
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const list = await context.env.ICONS.list()
 
@@ -56,9 +64,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
+  const siteUrl = formData.get('siteUrl') as string | null
   const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-  const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const key = siteUrl ? `${getDomain(siteUrl)}.${ext}` : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
+  // Overwrite if same domain icon already exists
   await context.env.ICONS.put(key, file.stream(), {
     httpMetadata: { contentType: file.type },
   })

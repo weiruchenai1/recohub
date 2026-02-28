@@ -27,17 +27,19 @@ RecoHub 提供了一个简洁美观的界面，用于组织和分享精选的软
 recohub/
 ├── src/                          # 前端源码
 │   ├── components/               # Vue 组件
-│   │   ├── Navbar.vue            # 顶部导航栏（全局搜索、主题切换、账号菜单）
+│   │   ├── Navbar.vue            # 顶部导航栏（全局搜索、主题切换、账号菜单、待审核角标）
 │   │   ├── AccountDropdown.vue   # 账号下拉菜单
 │   │   ├── TabBar.vue            # 分类标签栏（动态分组）
 │   │   ├── Toolbar.vue           # 工具栏（搜索、添加、视图切换）
 │   │   ├── ItemTable.vue         # 列表视图容器
-│   │   ├── ItemTableRow.vue      # 列表行组件
+│   │   ├── ItemTableRow.vue      # 列表行组件（含失效链接标识）
 │   │   ├── ItemGrid.vue          # 网格视图容器
-│   │   ├── ItemGridCard.vue      # 网格卡片组件
-│   │   ├── ItemModal.vue         # 新增/编辑弹窗（含图标获取与上传）
+│   │   ├── ItemGridCard.vue      # 网格卡片组件（含失效链接标识）
+│   │   ├── ItemModal.vue         # 新增/编辑/投稿弹窗（含图标获取与上传，访客投稿模式）
 │   │   ├── LoginModal.vue        # 登录弹窗
-│   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理、图标管理）
+│   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理、图标管理、审核管理、链接检查）
+│   │   ├── ReviewPanel.vue       # 审核管理面板（查看/通过/驳回访客投稿）
+│   │   ├── HealthPanel.vue       # 链接健康检查面板（失效链接列表、检查间隔配置）
 │   │   ├── SearchDropdown.vue    # 搜索下拉结果
 │   │   ├── PaginationBar.vue     # 分页控件
 │   │   ├── FloatingToolbar.vue   # 浮动批量操作栏
@@ -47,35 +49,47 @@ recohub/
 │   ├── stores/                   # Pinia 状态管理
 │   │   ├── auth.ts               # 认证状态
 │   │   ├── ui.ts                 # UI 状态（主题、布局、分类管理等）
-│   │   └── items.ts              # 数据状态（列表增删改查）
+│   │   ├── items.ts              # 数据状态（列表增删改查）
+│   │   └── submissions.ts        # 投稿状态（待审核列表、审核/驳回、访客提交）
 │   ├── composables/              # 组合式函数
-│   │   ├── useFavicon.ts         # Favicon 获取与缓存（支持自定义图标优先）
+│   │   ├── useFavicon.ts         # Favicon 展示（使用服务端存储的图标）
 │   │   ├── useDebounce.ts        # 防抖
 │   │   └── useClickOutside.ts    # 点击外部检测
 │   ├── lib/                      # 工具库
 │   │   └── api.ts                # API 客户端封装
 │   ├── types/                    # TypeScript 类型定义
-│   │   └── index.ts              # 全局类型
+│   │   └── index.ts              # 全局类型（Item、Submission 等）
 │   ├── App.vue                   # 根组件
 │   ├── main.ts                   # 应用入口
 │   └── style.css                 # 全局样式与主题变量
 │
 ├── functions/                    # 后端 API（Cloudflare Pages Functions）
+│   ├── lib/                      # 后端公共库
+│   │   ├── autoIcon.ts           # 自动抓取网站 Favicon 并存入 R2
+│   │   └── healthCheck.ts        # 链接健康检查核心逻辑（HEAD/GET 探测、失败计数）
 │   └── api/
-│       ├── _middleware.ts        # JWT 认证中间件 + 数据库初始化/迁移
+│       ├── _middleware.ts        # JWT 认证中间件 + 数据库初始化/迁移 + 后台健康检查调度
 │       ├── login.ts              # 登录接口
 │       ├── icons/
-│       │   ├── index.ts          # 图标列表 / 上传（R2 存储）
+│       │   ├── index.ts          # 图标列表 / 上传（R2 存储，基于域名命名）
 │       │   ├── [key].ts          # 图标访问 / 删除
 │       │   ├── fetch.ts          # 从 URL 抓取图标候选列表
-│       │   └── save.ts           # 将外部图标下载并存入 R2
+│       │   └── save.ts           # 将外部图标下载并存入 R2（基于域名命名）
 │       ├── categories/
 │       │   ├── index.ts          # 分类列表 / 新增 / 批量更新排序
 │       │   └── [key].ts          # 删除分类
-│       └── items/
-│           ├── index.ts          # 列表查询 / 新增
-│           ├── [id].ts           # 单条编辑 / 删除
-│           └── batch.ts          # 批量操作（删除/移动）
+│       ├── items/
+│       │   ├── index.ts          # 列表查询 / 新增（自动获取图标）
+│       │   ├── [id].ts           # 单条编辑 / 删除
+│       │   ├── batch.ts          # 批量操作（删除/移动）
+│       │   ├── health.ts         # 健康状态查询 / 重置 / 检查间隔设置
+│       │   └── health-check.ts   # 手动触发健康检查
+│       └── submissions/
+│           ├── index.ts          # 投稿列表查询 / 访客提交（含防刷限制）
+│           ├── count.ts          # 待审核数量
+│           └── [id]/
+│               ├── index.ts      # 驳回投稿
+│               └── approve.ts    # 通过投稿（转为正式条目）
 │
 ├── db/                           # 数据库
 │   ├── schema.sql                # 表结构定义
@@ -85,6 +99,7 @@ recohub/
 ├── wrangler.toml                 # Cloudflare 配置
 ├── vite.config.ts                # Vite 构建配置
 ├── tsconfig.json                 # TypeScript 配置
+├── tsconfig.worker.json          # Cloudflare Workers TypeScript 配置
 └── package.json                  # 项目依赖
 ```
 
@@ -103,17 +118,22 @@ recohub/
 - [x] **浮动操作栏** - 选中条目后显示浮动工具栏，支持编辑/移动/删除/取消
 - [x] **用户认证** - 密码登录，JWT Token 鉴权（7天有效期）
 - [x] **明暗主题** - 亮色/暗色主题切换，跟随系统偏好，持久化存储
-- [x] **Favicon 展示** - 自动获取网站图标（Google S2 API + 降级方案），本地缓存7天，加载失败显示首字母占位图标
-- [x] **自定义图标** - 编辑条目时可一键获取网站图标候选列表，选择后存入 R2 永久缓存；也支持手动上传本地图标文件
+- [x] **Favicon 展示** - 服务端自动抓取网站图标并存入 R2，加载失败显示首字母占位图标
+- [x] **自动获取图标** - 新增条目时服务端自动抓取 Favicon（解析 HTML link 标签 + /favicon.ico + Google S2 降级），存入 R2 永久缓存，图标以域名命名自动去重
+- [x] **自定义图标** - 编辑条目时可一键获取网站图标候选列表，选择后存入 R2；也支持手动上传本地图标文件
 - [x] **图标管理** - 系统设置中的图标管理标签页，查看/删除所有已上传的图标
+- [x] **访客投稿** - 未登录用户可通过"推荐"按钮提交网站，进入审核队列等待管理员审批；含 Honeypot 反垃圾和 IP 频率限制（每 IP 每小时 5 条）
+- [x] **审核管理** - 管理员设置面板中的审核标签页，查看待审核投稿、通过（可编辑后通过）或驳回；导航栏显示待审核数量角标
+- [x] **链接健康检查** - 后台自动定期检测所有条目 URL 可用性（HEAD + GET 降级，15s 超时），连续 3 次失败标记为"已失效"；设置面板中可查看失效链接、重置状态、调整检查间隔（1h/6h/12h/24h）
+- [x] **失效链接展示** - 列表视图和网格视图中失效条目显示红色删除线和"已失效"标签
 - [x] **响应式布局** - 适配桌面端与移动端
 - [x] **状态持久化** - UI 偏好（主题、布局、分页等）保存到 localStorage，分类配置存储在后端数据库
 - [x] **个性化设置** - 可配置 LOGO 显示/隐藏、自定义文本、壁纸主题切换
-- [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理、图标管理
+- [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理、图标管理、审核管理、链接检查
 - [x] **账号菜单** - 导航栏用户图标，登录后显示下拉菜单快速访问设置
 - [x] **URL 校验** - 后端 API 新增/编辑时校验 URL 格式，仅允许 http/https 协议
 - [x] **后端 API** - 完整的 RESTful API，含认证中间件
-- [x] **数据库设计** - D1 数据库表结构、索引与唯一约束（防重复插入）
+- [x] **数据库设计** - D1 数据库表结构、索引与唯一约束（防重复插入），自动迁移至 V6
 
 ### 待完成/可扩展
 
@@ -133,16 +153,25 @@ recohub/
 | `PUT` | `/api/categories` | 批量更新分类（重命名/排序） | 是 |
 | `DELETE` | `/api/categories/:key` | 删除分类（分类下有条目时返回 409） | 是 |
 | `GET` | `/api/items` | 获取列表（支持分页、搜索、分类筛选，category 可选） | 否 |
-| `POST` | `/api/items` | 新增条目（自动去重，同分类同 URL 返回 409） | 是 |
+| `POST` | `/api/items` | 新增条目（自动去重，同分类同 URL 返回 409；自动获取图标） | 是 |
 | `PUT` | `/api/items/:id` | 编辑条目（支持 `icon_url` 字段） | 是 |
 | `DELETE` | `/api/items/:id` | 删除条目 | 是 |
 | `POST` | `/api/items/batch` | 批量操作（删除/移动） | 是 |
+| `GET` | `/api/items/health` | 获取失效/异常链接列表及检查设置 | 是 |
+| `PUT` | `/api/items/health` | 更新健康检查间隔 | 是 |
+| `DELETE` | `/api/items/health` | 重置指定条目的健康状态 | 是 |
+| `POST` | `/api/items/health-check` | 手动触发一轮健康检查 | 是 |
 | `GET` | `/api/icons` | 获取所有已上传图标列表 | 否 |
 | `POST` | `/api/icons` | 上传本地图标文件到 R2（FormData） | 是 |
 | `GET` | `/api/icons/:key` | 访问图标文件（强缓存，immutable） | 否 |
 | `DELETE` | `/api/icons/:key` | 删除图标（引用该图标的条目自动清除） | 是 |
-| `POST` | `/api/icons/fetch` | 从目标 URL 抓取图标候选列表 | 是 |
-| `POST` | `/api/icons/save` | 将外部图标 URL 下载并存入 R2 | 是 |
+| `POST` | `/api/icons/fetch` | 从目标 URL 抓取图标候选列表 | 否 |
+| `POST` | `/api/icons/save` | 将外部图标 URL 下载并存入 R2 | 否 |
+| `GET` | `/api/submissions` | 获取待审核投稿列表 | 是 |
+| `POST` | `/api/submissions` | 访客提交网站推荐（含防刷限制） | 否 |
+| `GET` | `/api/submissions/count` | 获取待审核投稿数量 | 是 |
+| `POST` | `/api/submissions/:id/approve` | 通过投稿（转为正式条目，支持编辑后通过） | 是 |
+| `DELETE` | `/api/submissions/:id` | 驳回/删除投稿 | 是 |
 
 ## 本地开发
 

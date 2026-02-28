@@ -5,16 +5,29 @@ import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { api, ApiRequestError } from '@/lib/api'
 import type { IconInfo } from '@/types'
+import ReviewPanel from '@/components/ReviewPanel.vue'
+import HealthPanel from '@/components/HealthPanel.vue'
 
 const ui = useUiStore()
 const auth = useAuthStore()
 
-const sidebarItems = [
+const baseSidebarItems = [
   { key: 'account', label: '我的账号', icon: 'user' },
   { key: 'personalize', label: '个性化设置', icon: 'palette' },
   { key: 'groups', label: '分组管理', icon: 'folder' },
   { key: 'icons', label: '图标管理', icon: 'image' },
 ]
+
+const adminSidebarItems = [
+  { key: 'review', label: '审核管理', icon: 'inbox' },
+  { key: 'health', label: '链接检查', icon: 'activity' },
+]
+
+const sidebarItems = computed(() =>
+  auth.isLoggedIn
+    ? [...baseSidebarItems, ...adminSidebarItems]
+    : baseSidebarItems
+)
 
 const activeTab = computed(() => ui.settingsTab)
 
@@ -167,6 +180,15 @@ watch(activeTab, (tab) => {
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
               <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <!-- inbox -->
+            <svg v-else-if="item.icon === 'inbox'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
+              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+            </svg>
+            <!-- activity -->
+            <svg v-else-if="item.icon === 'activity'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
             <span>{{ item.label }}</span>
           </button>
@@ -387,6 +409,12 @@ watch(activeTab, (tab) => {
             </div>
           </div>
         </div>
+
+        <!-- Review management -->
+        <ReviewPanel v-else-if="activeTab === 'review'" />
+
+        <!-- Health check -->
+        <HealthPanel v-else-if="activeTab === 'health'" />
       </main>
     </div>
   </div>

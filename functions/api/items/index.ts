@@ -1,5 +1,8 @@
+import { autoFetchIcon } from '../../lib/autoIcon'
+
 interface Env {
   DB: D1Database
+  ICONS: R2Bucket
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -93,10 +96,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
+  // Auto-fetch icon if not provided
+  const iconUrl = body.icon_url ?? await autoFetchIcon(body.url, context.env.ICONS)
+
   const result = await context.env.DB.prepare(
     'INSERT INTO items (category, name, url, note, sort_order, icon_url) VALUES (?, ?, ?, ?, ?, ?)'
   )
-    .bind(body.category, body.name, body.url, body.note || '', body.sort_order || 0, body.icon_url ?? null)
+    .bind(body.category, body.name, body.url, body.note || '', body.sort_order || 0, iconUrl)
     .run()
 
   const item = await context.env.DB.prepare('SELECT * FROM items WHERE id = ?')

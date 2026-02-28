@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
+import { useSubmissionsStore } from '@/stores/submissions'
 import { api, ApiRequestError } from '@/lib/api'
 
 const emit = defineEmits<{
@@ -11,8 +13,11 @@ const emit = defineEmits<{
 
 const items = useItemsStore()
 const ui = useUiStore()
+const auth = useAuthStore()
+const submissionsStore = useSubmissionsStore()
 
 const isEdit = computed(() => items.modalMode === 'edit')
+const isVisitor = computed(() => !auth.isLoggedIn)
 
 const form = ref({
   name: '',
@@ -22,7 +27,11 @@ const form = ref({
   icon_url: null as string | null,
 })
 
+const honeypot = ref('')
 const saving = ref(false)
+const submitError = ref('')
+const submitSuccess = ref(false)
+let submitErrorTimer: ReturnType<typeof setTimeout>
 
 // --- Icon fetching ---
 const showIconPicker = ref(false)
@@ -75,7 +84,7 @@ async function fetchIcons() {
 async function selectIcon(iconUrl: string) {
   savingIcon.value = iconUrl
   try {
-    const res = await api.post<{ key: string; url: string; size: number }>('/icons/save', { url: iconUrl })
+    const res = await api.post<{ key: string; url: string; size: number }>('/icons/save', { url: iconUrl, siteUrl: form.value.url })
     form.value.icon_url = res.url
     showIconPicker.value = false
   } catch {
@@ -98,6 +107,7 @@ async function handleFileChange(e: Event) {
   try {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('siteUrl', form.value.url)
     const res = await api.upload<{ key: string; url: string; size: number }>('/icons', formData)
     form.value.icon_url = res.url
     showIconPicker.value = false
@@ -117,27 +127,59 @@ async function handleSubmit() {
   if (!form.value.name.trim()) return
   if (!form.value.url.trim()) return
 
+  clearTimeout(submitErrorTimer)
   saving.value = true
+
   try {
-    const data = {
-      name: form.value.name,
-      url: form.value.url,
-      note: form.value.note,
-      category: form.value.category,
-      icon_url: form.value.icon_url,
-    }
-    if (isEdit.value && items.editingItem) {
-      await items.updateItem(items.editingItem.id, data)
+    if (isVisitor.value) {
+      // Visitor submission — goes to submissions queue
+      await submissionsStore.submitWebsite({
+        name: form.value.name,
+        url: form.value.url,
+        note: form.value.note,
+        category: form.value.category,
+        icon_url: form.value.icon_url,
+        _hp: honeypot.value,
+      })
+      submitSuccess.value = true
     } else {
-      await items.createItem(data)
+      // Admin — direct create/edit
+      const data = {
+        name: form.value.name,
+        url: form.value.url,
+        note: form.value.note,
+        category: form.value.category,
+        icon_url: form.value.icon_url,
+      }
+      if (isEdit.value && items.editingItem) {
+        await items.updateItem(items.editingItem.id, data)
+      } else {
+        await items.createItem(data)
+      }
+      emit('saved')
+      emit('close')
     }
-    emit('saved')
-    emit('close')
-  } catch {
-    // silently fail
+  } catch (e: unknown) {
+    if (isVisitor.value) {
+      clearTimeout(submitErrorTimer)
+      submitError.value = e instanceof Error ? e.message : '提交失败，请稍后再试'
+      submitErrorTimer = setTimeout(() => { submitError.value = '' }, 3000)
+    }
   } finally {
     saving.value = false
   }
+}
+
+function modalTitle(): string {
+  if (isEdit.value) return '重命名'
+  if (isVisitor.value) return '推荐'
+  return '添加'
+}
+
+function submitLabel(): string {
+  if (isEdit.value) return '修改'
+  if (isVisitor.value) return '提交'
+  return '添加'
 }
 </script>
 
@@ -147,75 +189,121 @@ async function handleSubmit() {
     @click.self="emit('close')"
   >
     <div class="w-[420px] max-w-[92vw] rounded-2xl p-7 border-none bg-row">
-      <h3 class="m-0 mb-5 text-[17px] font-semibold text-text">
-        {{ isEdit ? '重命名' : '添加' }}
-      </h3>
-
-      <!-- Icon preview (when icon is set) -->
-      <div v-if="form.icon_url" class="mb-4 flex items-center gap-3">
-        <img :src="form.icon_url" alt="" class="w-10 h-10 rounded-lg object-contain shrink-0" />
-        <span class="text-xs text-note flex-1">已设置自定义图标</span>
-        <button type="button" class="icon-remove-btn" @click="removeIcon">移除</button>
+      <!-- Success state (visitor only) -->
+      <div v-if="submitSuccess" class="text-center py-2">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-green-500/15 flex items-center justify-center">
+          <svg class="w-6 h-6 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h3 class="text-[17px] font-semibold text-text mb-2">提交成功</h3>
+        <p class="text-sm text-note mb-5">感谢您的推荐！管理员审核通过后将会显示在列表中。</p>
+        <button type="button" @click="emit('close')" class="modal-btn-primary">关闭</button>
       </div>
 
-      <div class="mb-3.5">
-        <label class="block text-[13px] font-medium mb-1 text-note">
-          名称 <span class="text-danger ml-0.5">*</span>
-        </label>
-        <input
-          id="modal-name-input"
-          v-model="form.name"
-          type="text"
-          placeholder="输入名称"
-          class="w-full py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
-          @keydown.enter="handleSubmit"
-        />
-      </div>
+      <!-- Form -->
+      <template v-else>
+        <h3 class="m-0 mb-5 text-[17px] font-semibold text-text">
+          {{ modalTitle() }}
+        </h3>
 
-      <div class="mb-3.5">
-        <label class="block text-[13px] font-medium mb-1 text-note">
-          地址 <span class="text-danger ml-0.5">*</span>
-        </label>
-        <div class="flex gap-2">
+        <!-- Icon preview (when icon is set) -->
+        <div v-if="form.icon_url" class="mb-4 flex items-center gap-3">
+          <img :src="form.icon_url" alt="" class="w-10 h-10 rounded-lg object-contain shrink-0" />
+          <span class="text-xs text-note flex-1">已设置自定义图标</span>
+          <button type="button" class="icon-remove-btn" @click="removeIcon">移除</button>
+        </div>
+
+        <div class="mb-3.5">
+          <label class="block text-[13px] font-medium mb-1 text-note">
+            名称 <span class="text-danger ml-0.5">*</span>
+          </label>
           <input
-            v-model="form.url"
+            id="modal-name-input"
+            v-model="form.name"
             type="text"
-            placeholder="输入地址"
-            class="flex-1 py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
+            placeholder="输入名称"
+            class="w-full py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
             @keydown.enter="handleSubmit"
           />
-          <button
-            type="button"
-            class="fetch-icon-btn"
-            :disabled="!form.url.trim() || fetchingIcons"
-            @click="fetchIcons"
+        </div>
+
+        <div class="mb-3.5">
+          <label class="block text-[13px] font-medium mb-1 text-note">
+            地址 <span class="text-danger ml-0.5">*</span>
+          </label>
+          <div class="flex gap-2">
+            <input
+              v-model="form.url"
+              type="text"
+              placeholder="输入地址"
+              class="flex-1 min-w-0 py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
+              @keydown.enter="handleSubmit"
+            />
+            <button
+              type="button"
+              class="fetch-icon-btn"
+              :disabled="!form.url.trim() || fetchingIcons"
+              @click="fetchIcons"
+            >
+              {{ fetchingIcons ? '获取中...' : '获取图标' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-3.5">
+          <label class="block text-[13px] font-medium mb-1 text-note">
+            备注
+          </label>
+          <input
+            v-model="form.note"
+            type="text"
+            placeholder="输入备注（选填）"
+            class="w-full py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
+            @keydown.enter="handleSubmit"
+          />
+        </div>
+
+        <!-- Category selector -->
+        <div class="mb-3.5">
+          <label class="block text-[13px] font-medium mb-1 text-note">
+            分组
+          </label>
+          <select
+            v-model="form.category"
+            class="w-full py-[9px] px-3 text-sm border-none rounded-lg outline-none text-text bg-search cursor-pointer"
           >
-            {{ fetchingIcons ? '获取中...' : '获取图标' }}
+            <option v-for="cat in ui.categories" :key="cat.key" :value="cat.key">
+              {{ cat.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Honeypot — hidden from humans (visitor mode only) -->
+        <input
+          v-if="isVisitor"
+          v-model="honeypot"
+          type="text"
+          name="_hp"
+          autocomplete="off"
+          tabindex="-1"
+          style="position: absolute; left: -9999px; opacity: 0; height: 0; width: 0;"
+        />
+
+        <!-- Error -->
+        <div v-if="submitError" class="px-3 py-2 mb-3 text-xs text-danger rounded-md bg-red-500/10">
+          {{ submitError }}
+        </div>
+
+        <div class="flex justify-end gap-2 mt-[22px]">
+          <button type="button" @click="emit('close')" class="modal-btn-cancel">
+            取消
+          </button>
+          <button type="button" :disabled="saving" @click="handleSubmit" class="modal-btn-primary">
+            {{ submitLabel() }}
           </button>
         </div>
-      </div>
-
-      <div class="mb-3.5">
-        <label class="block text-[13px] font-medium mb-1 text-note">
-          备注
-        </label>
-        <input
-          v-model="form.note"
-          type="text"
-          placeholder="输入备注（选填）"
-          class="w-full py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
-          @keydown.enter="handleSubmit"
-        />
-      </div>
-
-      <div class="flex justify-end gap-2 mt-[22px]">
-        <button type="button" @click="emit('close')" class="modal-btn-cancel">
-          取消
-        </button>
-        <button type="button" :disabled="saving" @click="handleSubmit" class="modal-btn-primary">
-          {{ isEdit ? '修改' : '添加' }}
-        </button>
-      </div>
+      </template>
     </div>
 
     <!-- Icon picker dialog -->
@@ -268,8 +356,8 @@ async function handleSubmit() {
           </button>
         </div>
 
-        <!-- Upload local file option -->
-        <div v-if="!fetchingIcons" class="border-t border-border pt-3">
+        <!-- Upload local file option (admin only) -->
+        <div v-if="!fetchingIcons && !isVisitor" class="border-t border-border pt-3">
           <button
             type="button"
             class="text-[12px] text-link cursor-pointer bg-transparent border-none hover:underline p-0"
@@ -305,6 +393,12 @@ async function handleSubmit() {
   white-space: nowrap;
   flex-shrink: 0;
   transition: background-color 0.15s;
+}
+@media (max-width: 480px) {
+  .fetch-icon-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 }
 .fetch-icon-btn:hover:not(:disabled) {
   background-color: var(--search-bg);

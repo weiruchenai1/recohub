@@ -2,21 +2,17 @@
 import { ref } from 'vue'
 import SearchDropdown from '@/components/SearchDropdown.vue'
 import { useUiStore } from '@/stores/ui'
-import { useAuthStore } from '@/stores/auth'
 import { useItemsStore } from '@/stores/items'
 
 const emit = defineEmits<{ refresh: [] }>()
 
 const ui = useUiStore()
-const auth = useAuthStore()
 const items = useItemsStore()
 const localDropdownOpen = ref(false)
 
 function handleAdd() {
-  ui.requireAuthOrLogin(() => {
-    items.startAdd()
-    ui.showItemModal = true
-  }, auth.isLoggedIn)
+  items.startAdd()
+  ui.showItemModal = true
 }
 
 function onLocalInput() {

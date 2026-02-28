@@ -13,13 +13,22 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import SettingsModal from '@/components/SettingsModal.vue'
 import { useUiStore } from '@/stores/ui'
 import { useItemsStore } from '@/stores/items'
+import { useAuthStore } from '@/stores/auth'
+import { useSubmissionsStore } from '@/stores/submissions'
 import { useDebouncedRef } from '@/composables/useDebounce'
 
 const ui = useUiStore()
 const items = useItemsStore()
+const auth = useAuthStore()
+const submissionsStore = useSubmissionsStore()
 
 // Load categories from backend on startup
 ui.fetchCategories()
+
+// Fetch pending count if already logged in
+if (auth.isLoggedIn) {
+  submissionsStore.fetchPendingCount()
+}
 
 // Lock body scroll when any modal is open
 const anyModalOpen = computed(() =>

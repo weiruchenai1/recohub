@@ -4,8 +4,16 @@ interface Env {
 
 const MAX_SIZE = 512 * 1024
 
+function getDomain(url: string): string {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url.replace(/[^a-zA-Z0-9.-]/g, '_')
+  }
+}
+
 export const onRequestPost: PagesFunction<Env> = async (context) => {
-  const body = await context.request.json<{ url: string }>()
+  const body = await context.request.json<{ url: string; siteUrl?: string }>()
 
   if (!body.url) {
     return new Response(JSON.stringify({ error: 'URL is required' }), {
@@ -52,8 +60,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     else if (contentType.includes('webp')) ext = 'webp'
     else if (contentType.includes('icon') || contentType.includes('x-icon')) ext = 'ico'
 
-    const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+    const domain = getDomain(body.siteUrl || body.url)
+    const key = `${domain}.${ext}`
 
+    // Overwrite if same domain icon already exists
     await context.env.ICONS.put(key, buffer, {
       httpMetadata: { contentType },
     })

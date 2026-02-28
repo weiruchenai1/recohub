@@ -49,9 +49,11 @@ const isChecked = () => items.selectedIds.has(props.item.id)
         :href="item.url"
         target="_blank"
         rel="noopener noreferrer"
+        :class="item.status === 'dead' ? 'text-red-500 line-through opacity-60' : 'text-link'"
       >
         {{ displayUrl(item.url) }}
       </a>
+      <span v-if="item.status === 'dead'" class="ml-1.5 text-[11px] font-medium text-red-500">(已失效)</span>
     </td>
     <td class="px-4 py-3 border-b border-border text-[0.9em] text-note">
       {{ item.note }}

@@ -5,9 +5,11 @@ import SearchDropdown from '@/components/SearchDropdown.vue'
 import AccountDropdown from '@/components/AccountDropdown.vue'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { useSubmissionsStore } from '@/stores/submissions'
 
 const ui = useUiStore()
 const auth = useAuthStore()
+const submissionsStore = useSubmissionsStore()
 const globalDropdownOpen = ref(false)
 const accountDropdownOpen = ref(false)
 
@@ -86,6 +88,13 @@ function onAccountClick() {
             <circle cx="12" cy="7" r="4"/>
           </svg>
         </button>
+        <!-- Pending count badge -->
+        <span
+          v-if="auth.isLoggedIn && submissionsStore.pendingCount > 0"
+          class="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none pointer-events-none"
+        >
+          {{ submissionsStore.pendingCount > 99 ? '99+' : submissionsStore.pendingCount }}
+        </span>
         <AccountDropdown
           v-if="accountDropdownOpen"
           @close="accountDropdownOpen = false"

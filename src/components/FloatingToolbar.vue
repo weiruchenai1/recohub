@@ -70,7 +70,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 
 <template>
   <div
-    class="fixed bottom-6 left-1/2 z-[1000] flex items-center gap-1 py-1.5 px-2 rounded-xl border border-border bg-navbar backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-[transform,opacity] duration-300"
+    class="floating-toolbar fixed left-1/2 z-[1000] flex items-center gap-1 py-1.5 px-2 rounded-xl border border-border bg-navbar backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-[transform,opacity] duration-300"
     :style="{
       transform: show ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(80px)',
       opacity: show ? '1' : '0',
@@ -198,5 +198,14 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 }
 .move-menu-item:hover {
   background-color: var(--header-bg);
+}
+
+.floating-toolbar {
+  bottom: 24px;
+}
+@media (max-width: 640px) {
+  .floating-toolbar {
+    bottom: 64px;
+  }
 }
 </style>

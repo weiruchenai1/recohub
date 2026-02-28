@@ -18,8 +18,22 @@ export interface Item {
   note: string
   sort_order: number
   icon_url: string | null
+  status: 'ok' | 'dead'
+  last_checked: string | null
+  fail_count: number
   created_at: string
   updated_at: string
+}
+
+export interface Submission {
+  id: number
+  name: string
+  url: string
+  note: string
+  category: string
+  icon_url: string | null
+  submitter_ip: string
+  created_at: string
 }
 
 export type ModalMode = 'add' | 'edit'

@@ -4,7 +4,7 @@ interface Env {
 
 // DELETE /api/categories/:key — delete a category (authenticated)
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
-  const key = context.params.key as string
+  const key = decodeURIComponent(context.params.key as string)
 
   if (!key) {
     return new Response(JSON.stringify({ error: 'Missing category key' }), {

@@ -10,7 +10,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const body = await request.json<{ password: string }>()
 
   if (!body.password || body.password !== env.AUTH_PASSWORD) {
-    return new Response(JSON.stringify({ error: 'Invalid password' }), {
+    return new Response(JSON.stringify({ error: '密码错误' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     })

@@ -3,8 +3,9 @@
 ## 基本信息
 
 - **引擎**：Cloudflare D1 (SQLite)
-- **对象存储**：Cloudflare R2（自定义图标文件存储于 `recohub-icons` 存储桶）
+- **对象存储**：Cloudflare R2（详见 [R2 对象存储说明](./R2.md)）
 - **初始化方式**：首次请求时由 `functions/api/_middleware.ts` 中的 `ensureDB` 自动完成
+- **健康检查**：后台自动定期检测条目 URL 可用性，由 `functions/lib/healthCheck.ts` 驱动
 - **参考 Schema**：`db/schema.sql`
 
 ## 表结构
@@ -40,6 +41,9 @@
 | note | TEXT DEFAULT '' | 备注说明 |
 | sort_order | INTEGER DEFAULT 0 | 排序权重 |
 | icon_url | TEXT DEFAULT NULL | 自定义图标 URL（指向 R2 存储的图标路径，如 `/api/icons/xxx.png`；为 NULL 时使用自动获取） |
+| status | TEXT DEFAULT 'ok' | 链接健康状态（`ok` 正常 / `dead` 已失效） |
+| last_checked | TEXT DEFAULT NULL | 最近一次健康检查时间 |
+| fail_count | INTEGER DEFAULT 0 | 连续检查失败次数（达到 3 次标记为 `dead`） |
 | created_at | TEXT DEFAULT (datetime('now')) | 创建时间 |
 | updated_at | TEXT DEFAULT (datetime('now')) | 更新时间 |
 
@@ -48,6 +52,36 @@
 **索引**：
 - `idx_items_category` — category 列
 - `idx_items_sort_order` — sort_order 列
+
+### `submissions`
+
+存储访客提交的网站推荐，等待管理员审核。
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | 自增主键 |
+| name | TEXT NOT NULL | 推荐名称 |
+| url | TEXT NOT NULL | 推荐链接 |
+| note | TEXT DEFAULT '' | 备注说明 |
+| category | TEXT DEFAULT '' | 建议分组 |
+| icon_url | TEXT DEFAULT NULL | 图标 URL |
+| submitter_ip | TEXT DEFAULT '' | 提交者 IP（用于频率限制） |
+| created_at | TEXT DEFAULT (datetime('now')) | 提交时间 |
+
+**索引**：
+- `idx_submissions_created` — created_at 列
+
+### `settings`
+
+键值对配置表，存储系统级设置。
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| key | TEXT PRIMARY KEY | 配置项标识 |
+| value | TEXT NOT NULL | 配置值 |
+
+**默认数据**：
+- `health_check_interval` = `21600`（健康检查间隔，单位秒，默认 6 小时）
 
 ## 自动迁移机制
 
@@ -68,6 +102,9 @@
 | 1 | 移除 `category` 列的 CHECK 约束，通过 SQLite 表重建模式实现 |
 | 2 | 创建 `categories` 表并从已有 items 中自动补录分类，种子数据包含默认的 `software` 和 `website` 分类 |
 | 3 | `items` 表新增 `icon_url` 列（TEXT DEFAULT NULL），用于存储自定义图标的 R2 路径 |
+| 4 | 创建 `submissions` 表（访客投稿队列）；`items` 表新增 `status`、`last_checked`、`fail_count` 列（链接健康检查） |
+| 5 | `submissions` 表新增 `icon_url` 列 |
+| 6 | 创建 `settings` 表，写入默认健康检查间隔配置（`health_check_interval` = 21600 秒） |
 
 ### 添加新迁移
 
@@ -75,7 +112,7 @@
 
 ```ts
 {
-  version: 3,
+  version: 7,
   description: '描述变更内容',
   async run(db) {
     // 执行 SQL
@@ -102,22 +139,3 @@ npm run db:seed:local
 ```
 
 对于个人使用，运行时自动迁移足够可靠。如果是公开部署场景，建议将迁移剥离到部署流程中以避免并发冷启动的性能损耗。
-
-## R2 对象存储（图标）
-
-自定义图标文件存储在 Cloudflare R2 存储桶 `recohub-icons` 中，通过 `ICONS` 绑定访问。
-
-### 存储规则
-
-| 项目 | 说明 |
-|---|---|
-| Key 格式 | `{timestamp}-{random}.{ext}`（如 `1735000000000-a1b2c3.png`） |
-| 文件大小限制 | 512 KB |
-| 支持的格式 | PNG、JPEG、GIF、SVG、ICO、WebP |
-| 缓存策略 | `Cache-Control: public, max-age=31536000, immutable` |
-
-### 关联关系
-
-- `items.icon_url` 存储 R2 图标的访问路径（如 `/api/icons/xxx.png`）
-- 删除图标时，所有引用该图标的 items 会自动将 `icon_url` 置为 NULL（恢复自动获取）
-- 图标文件与数据库记录之间没有外键约束，通过 API 层维护一致性
