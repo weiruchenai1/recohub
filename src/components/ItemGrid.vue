@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import ItemGridCard from '@/components/ItemGridCard.vue'
 import { useItemsStore } from '@/stores/items'
-import type { Item } from '@/types'
-
-const emit = defineEmits<{
-  edit: [item: Item]
-  deleted: []
-}>()
 
 const items = useItemsStore()
 </script>
@@ -19,8 +13,6 @@ const items = useItemsStore()
       v-for="item in items.items"
       :key="item.id"
       :item="item"
-      @edit="emit('edit', item)"
-      @deleted="emit('deleted')"
     />
     <div
       v-if="items.items.length === 0"

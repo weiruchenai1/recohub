@@ -19,10 +19,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('auth_token')
   }
 
-  function requireAuth(): boolean {
-    if (!isLoggedIn.value) return false
-    return true
-  }
-
-  return { token, isLoggedIn, login, logout, requireAuth }
+  return { token, isLoggedIn, login, logout }
 })

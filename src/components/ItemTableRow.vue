@@ -9,11 +9,6 @@ const props = defineProps<{
   index: number
 }>()
 
-const emit = defineEmits<{
-  edit: []
-  deleted: []
-}>()
-
 const items = useItemsStore()
 const ui = useUiStore()
 function displayUrl(url: string): string {

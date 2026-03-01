@@ -51,12 +51,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   })
 }
 
-// DELETE /api/items/health?id=123 — reset a single item's health status (auth required)
+// DELETE /api/items/health?id=123 — reset a single item's health status (auth via middleware)
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
-  if (!await verifyAuth(context.request, context.env.JWT_SECRET)) {
-    return json({ error: 'Unauthorized' }, 401)
-  }
-
   const url = new URL(context.request.url)
   const id = parseInt(url.searchParams.get('id') || '')
   if (!id) return json({ error: '缺少 id' }, 400)

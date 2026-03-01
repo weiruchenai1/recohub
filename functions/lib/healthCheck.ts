@@ -15,11 +15,18 @@ export async function runHealthCheck(db: D1Database, limit = 10) {
   // Check all URLs in parallel
   const checks = await Promise.allSettled(
     items.map(async (item) => {
-      const headers = { 'User-Agent': 'Mozilla/5.0 (compatible; RecoHub/1.0; +healthcheck)' }
-      const isAlive = (status: number) => status !== 404 && status < 500
+      const headers: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      }
+      // Only 404/410 means the page is truly gone.
+      // Other HTTP errors (403, 5xx) usually mean WAF/bot-detection blocking,
+      // not that the site is down — the server IS responding.
+      const isDead = (status: number) => status === 404 || status === 410
       try {
         const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 15000)
+        const timeout = setTimeout(() => controller.abort(), 20000)
         const resp = await fetch(item.url, {
           method: 'HEAD',
           signal: controller.signal,
@@ -27,10 +34,10 @@ export async function runHealthCheck(db: D1Database, limit = 10) {
           headers,
         })
         clearTimeout(timeout)
-        if (isAlive(resp.status)) return { ...item, alive: true }
-        // HEAD failed, fallback to GET
+        if (!isDead(resp.status)) return { ...item, alive: true }
+        // HEAD returned 404/410, fallback to GET to confirm
         const controller2 = new AbortController()
-        const timeout2 = setTimeout(() => controller2.abort(), 15000)
+        const timeout2 = setTimeout(() => controller2.abort(), 20000)
         const resp2 = await fetch(item.url, {
           method: 'GET',
           signal: controller2.signal,
@@ -38,7 +45,7 @@ export async function runHealthCheck(db: D1Database, limit = 10) {
           headers,
         })
         clearTimeout(timeout2)
-        return { ...item, alive: isAlive(resp2.status) }
+        return { ...item, alive: !isDead(resp2.status) }
       } catch {
         return { ...item, alive: false }
       }

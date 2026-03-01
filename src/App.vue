@@ -83,13 +83,9 @@ watch(() => ui.page, () => {
     <template v-else>
       <ItemTable
         v-if="ui.layout === 'list'"
-        @edit="(item) => { items.startEdit(item); ui.showItemModal = true }"
-        @deleted="loadItems"
       />
       <ItemGrid
         v-else
-        @edit="(item) => { items.startEdit(item); ui.showItemModal = true }"
-        @deleted="loadItems"
       />
     </template>
 

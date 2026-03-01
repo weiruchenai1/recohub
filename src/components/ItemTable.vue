@@ -4,12 +4,6 @@ import ItemTableRow from '@/components/ItemTableRow.vue'
 import CustomCheckbox from '@/components/CustomCheckbox.vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
-import type { Item } from '@/types'
-
-const emit = defineEmits<{
-  edit: [item: Item]
-  deleted: []
-}>()
 
 const items = useItemsStore()
 const ui = useUiStore()
@@ -54,8 +48,6 @@ const headers = computed(() => {
           :key="item.id"
           :item="item"
           :index="index"
-          @edit="emit('edit', item)"
-          @deleted="emit('deleted')"
         />
         <tr v-if="items.items.length === 0">
           <td

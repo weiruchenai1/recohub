@@ -2,6 +2,7 @@
 import { ref, watch, toRef, onMounted, onBeforeUnmount } from 'vue'
 import { api } from '@/lib/api'
 import { useDebouncedRef } from '@/composables/useDebounce'
+import { useUiStore } from '@/stores/ui'
 import type { Item, PaginatedResponse } from '@/types'
 
 const props = defineProps<{
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const ui = useUiStore()
 const el = ref<HTMLElement | null>(null)
 const results = ref<Item[]>([])
 const debouncedKeyword = useDebouncedRef(toRef(props, 'keyword'), 300)
@@ -22,7 +24,11 @@ watch(
   async (kw) => {
     const q = kw.trim()
     if (!q) { results.value = []; return }
-    const query = new URLSearchParams({ q, page: '1', perPage: '50' })
+    const params: Record<string, string> = { q, page: '1', perPage: '50' }
+    if (props.scope === 'local') {
+      params.category = ui.activeTab
+    }
+    const query = new URLSearchParams(params)
     const res = await api.get<PaginatedResponse<Item>>(`/items?${query}`)
     results.value = res.data
   },

@@ -1,16 +1,10 @@
+import { getIconKey } from '../../lib/autoIcon'
+
 interface Env {
   ICONS: R2Bucket
 }
 
 const MAX_SIZE = 512 * 1024
-
-function getDomain(url: string): string {
-  try {
-    return new URL(url).hostname
-  } catch {
-    return url.replace(/[^a-zA-Z0-9.-]/g, '_')
-  }
-}
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const body = await context.request.json<{ url: string; siteUrl?: string }>()
@@ -60,8 +54,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     else if (contentType.includes('webp')) ext = 'webp'
     else if (contentType.includes('icon') || contentType.includes('x-icon')) ext = 'ico'
 
-    const domain = getDomain(body.siteUrl || body.url)
-    const key = `${domain}.${ext}`
+    const base = getIconKey(body.siteUrl || body.url)
+    const key = `${base}.${ext}`
 
     // Overwrite if same domain icon already exists
     await context.env.ICONS.put(key, buffer, {

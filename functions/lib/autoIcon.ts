@@ -1,6 +1,9 @@
 const MAX_SIZE = 512 * 1024
 
-function getDomain(url: string): string {
+/**
+ * Get the icon storage key (without extension) for the URL, based on hostname.
+ */
+export function getIconKey(url: string): string {
   try {
     return new URL(url).hostname
   } catch {
@@ -20,7 +23,7 @@ function getExtFromContentType(contentType: string): string {
 /**
  * Discover icon URLs from a website: parse HTML <link> tags, then /favicon.ico, then Google S2.
  */
-async function discoverIcons(siteUrl: string): Promise<string[]> {
+export async function discoverIcons(siteUrl: string): Promise<string[]> {
   const baseUrl = new URL(siteUrl)
   const iconUrls: string[] = []
   const seen = new Set<string>()
@@ -126,7 +129,7 @@ export async function autoFetchIcon(
       const result = await downloadIcon(iconUrl)
       if (!result) continue
 
-      const domain = getDomain(siteUrl)
+      const domain = getIconKey(siteUrl)
       const key = `${domain}.${result.ext}`
 
       await icons.put(key, result.buffer, {
