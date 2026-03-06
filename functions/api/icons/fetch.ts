@@ -1,4 +1,5 @@
 import { discoverIcons } from '../../lib/autoIcon'
+import { assertSafeUrl } from '../../lib/urlValidation'
 
 interface Env {}
 
@@ -13,10 +14,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   try {
-    const parsed = new URL(body.url)
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error()
+    assertSafeUrl(body.url)
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid URL' }), {
+    return new Response(JSON.stringify({ error: 'URL not allowed' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })

@@ -1,4 +1,5 @@
 import { getIconKey } from '../../lib/autoIcon'
+import { assertSafeUrl } from '../../lib/urlValidation'
 
 interface Env {
   ICONS: R2Bucket
@@ -17,6 +18,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   try {
+    assertSafeUrl(body.url)
+  } catch {
+    return new Response(JSON.stringify({ error: 'URL not allowed' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  try {
     const resp = await fetch(body.url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecoHub/1.0)' },
       redirect: 'follow',
@@ -25,6 +35,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (!resp.ok) {
       return new Response(JSON.stringify({ error: '获取图标失败' }), {
         status: 502,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const contentLength = resp.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > MAX_SIZE) {
+      return new Response(JSON.stringify({ error: '图标文件过大（超过 512KB）' }), {
+        status: 400,
         headers: { 'Content-Type': 'application/json' },
       })
     }

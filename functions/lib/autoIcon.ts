@@ -1,3 +1,5 @@
+import { assertSafeUrl } from './urlValidation'
+
 const MAX_SIZE = 512 * 1024
 
 /**
@@ -31,17 +33,19 @@ export async function discoverIcons(siteUrl: string): Promise<string[]> {
   function addIcon(href: string) {
     try {
       const resolved = new URL(href, baseUrl).toString()
+      assertSafeUrl(resolved)
       if (!seen.has(resolved)) {
         seen.add(resolved)
         iconUrls.push(resolved)
       }
     } catch {
-      // invalid URL, skip
+      // invalid or unsafe URL, skip
     }
   }
 
   // 1. Parse HTML for <link rel="icon"> / <link rel="apple-touch-icon">
   try {
+    assertSafeUrl(baseUrl.toString())
     const resp = await fetch(baseUrl.toString(), {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecoHub/1.0)' },
       redirect: 'follow',
@@ -92,12 +96,17 @@ async function downloadIcon(iconUrl: string): Promise<{
   ext: string
 } | null> {
   try {
+    assertSafeUrl(iconUrl)
+
     const resp = await fetch(iconUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecoHub/1.0)' },
       redirect: 'follow',
     })
 
     if (!resp.ok) return null
+
+    const contentLength = resp.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > MAX_SIZE) return null
 
     const contentType = (resp.headers.get('content-type') || 'image/png').split(';')[0].trim()
 

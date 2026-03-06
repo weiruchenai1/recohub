@@ -46,6 +46,10 @@ function loadItems() {
     page: ui.page,
     perPage: ui.perPage,
     q: debouncedLocal.value || undefined,
+  }).then(() => {
+    if (items.items.length === 0 && ui.page > 1) {
+      ui.page = Math.max(1, Math.ceil(items.total / ui.perPage))
+    }
   })
 }
 

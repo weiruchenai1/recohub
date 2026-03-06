@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS items (
     url TEXT NOT NULL,
     note TEXT DEFAULT '',
     sort_order INTEGER DEFAULT 0,
+    icon_url TEXT DEFAULT NULL,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     UNIQUE(category, url)
@@ -22,3 +23,16 @@ CREATE TABLE IF NOT EXISTS items (
 
 CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
 CREATE INDEX IF NOT EXISTS idx_items_sort_order ON items(sort_order);
+
+CREATE TABLE IF NOT EXISTS submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    note TEXT DEFAULT '',
+    category TEXT DEFAULT '',
+    icon_url TEXT DEFAULT NULL,
+    submitter_ip TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_submissions_created ON submissions(created_at);

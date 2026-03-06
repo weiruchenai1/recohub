@@ -6,7 +6,6 @@ import { useAuthStore } from '@/stores/auth'
 import { api, ApiRequestError } from '@/lib/api'
 import type { IconInfo } from '@/types'
 import ReviewPanel from '@/components/ReviewPanel.vue'
-import HealthPanel from '@/components/HealthPanel.vue'
 
 const ui = useUiStore()
 const auth = useAuthStore()
@@ -20,7 +19,6 @@ const baseSidebarItems = [
 
 const adminSidebarItems = [
   { key: 'review', label: '审核管理', icon: 'inbox' },
-  { key: 'health', label: '链接检查', icon: 'activity' },
 ]
 
 const sidebarItems = computed(() =>
@@ -185,10 +183,6 @@ watch(activeTab, (tab) => {
             <svg v-else-if="item.icon === 'inbox'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
               <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
               <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-            </svg>
-            <!-- activity -->
-            <svg v-else-if="item.icon === 'activity'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
             <span>{{ item.label }}</span>
           </button>
@@ -412,9 +406,6 @@ watch(activeTab, (tab) => {
 
         <!-- Review management -->
         <ReviewPanel v-else-if="activeTab === 'review'" />
-
-        <!-- Health check -->
-        <HealthPanel v-else-if="activeTab === 'health'" />
       </main>
     </div>
   </div>
