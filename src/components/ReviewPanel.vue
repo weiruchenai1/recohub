@@ -75,10 +75,10 @@ function formatTime(iso: string): string {
 </script>
 
 <template>
-  <div class="panel">
-    <h2 class="panel-title">
+  <div class="py-7 px-8">
+    <h2 class="text-lg font-semibold m-0 mb-6 text-text">
       审核管理
-      <span v-if="submissionsStore.submissions.length > 0" class="count-badge">
+      <span v-if="submissionsStore.submissions.length > 0" class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 ml-1.5 text-[11px] font-semibold leading-none text-link bg-search rounded-[9px] align-middle">
         {{ submissionsStore.submissions.length }}
       </span>
       <button
@@ -98,8 +98,8 @@ function formatTime(iso: string): string {
       {{ error }}
     </div>
 
-    <div class="section">
-      <h4 class="section-label">待审核列表</h4>
+    <div class="mb-6">
+      <h4 class="text-[13px] font-semibold m-0 text-link">待审核列表</h4>
 
       <div v-if="submissionsStore.loading && submissionsStore.submissions.length === 0" class="text-sm text-note mt-2">
         加载中...
@@ -113,7 +113,7 @@ function formatTime(iso: string): string {
         <div
           v-for="s in submissionsStore.submissions"
           :key="s.id"
-          class="review-card"
+          class="py-3 px-3.5 rounded-lg bg-search transition-colors"
         >
           <!-- Editing mode -->
           <template v-if="editingId === s.id">
@@ -146,8 +146,8 @@ function formatTime(iso: string): string {
               </select>
             </div>
             <div class="flex items-center gap-2">
-              <button class="action-btn action-btn-approve" @click="approve(s)">保存并通过</button>
-              <button class="action-btn action-btn-cancel" @click="cancelEdit">取消</button>
+              <button class="py-1 px-3 text-xs font-medium rounded-md border-none cursor-pointer transition-opacity hover:opacity-85 bg-green-500 text-white" @click="approve(s)">保存并通过</button>
+              <button class="py-1 px-3 text-xs font-medium rounded-md border-none cursor-pointer transition-opacity hover:opacity-85 bg-border text-text" @click="cancelEdit">取消</button>
             </div>
           </template>
 
@@ -169,9 +169,9 @@ function formatTime(iso: string): string {
             </div>
 
             <div class="flex items-center gap-2 mt-3">
-              <button class="action-btn action-btn-approve" @click="approve(s)">通过</button>
-              <button class="action-btn action-btn-edit" @click="startEdit(s)">编辑</button>
-              <button class="action-btn action-btn-reject" @click="reject(s)">拒绝</button>
+              <button class="py-1 px-3 text-xs font-medium rounded-md border-none cursor-pointer transition-opacity hover:opacity-85 bg-green-500 text-white" @click="approve(s)">通过</button>
+              <button class="py-1 px-3 text-xs font-medium rounded-md border-none cursor-pointer transition-opacity hover:opacity-85 bg-primary text-white" @click="startEdit(s)">编辑</button>
+              <button class="py-1 px-3 text-xs font-medium rounded-md border-none cursor-pointer transition-opacity hover:opacity-85 bg-red-500 text-white" @click="reject(s)">拒绝</button>
             </div>
           </template>
         </div>
@@ -179,76 +179,3 @@ function formatTime(iso: string): string {
     </div>
   </div>
 </template>
-
-<style scoped>
-.panel {
-  padding: 28px 32px;
-}
-.panel-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0 0 24px 0;
-  color: var(--text-color);
-}
-.count-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 6px;
-  margin-left: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--link-color);
-  background-color: var(--search-bg);
-  border-radius: 9px;
-  vertical-align: middle;
-}
-.section {
-  margin-bottom: 24px;
-}
-.section-label {
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--link-color);
-}
-
-.review-card {
-  padding: 12px 14px;
-  border-radius: 8px;
-  background-color: var(--search-bg);
-  transition: background-color 0.15s;
-}
-
-.action-btn {
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.action-btn:hover {
-  opacity: 0.85;
-}
-.action-btn-approve {
-  background-color: #22c55e;
-  color: white;
-}
-.action-btn-edit {
-  background-color: var(--btn-primary-bg);
-  color: white;
-}
-.action-btn-reject {
-  background-color: #ef4444;
-  color: white;
-}
-.action-btn-cancel {
-  background-color: var(--border-color);
-  color: var(--text-color);
-}
-</style>

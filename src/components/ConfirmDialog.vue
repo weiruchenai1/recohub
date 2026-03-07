@@ -22,46 +22,20 @@ const ui = useUiStore()
         <button
           type="button"
           @click="ui.cancelConfirm()"
-          class="modal-btn-cancel"
+          class="px-[18px] py-2 text-sm font-medium rounded-lg cursor-pointer bg-transparent border border-border text-text transition-colors"
         >
           取消
         </button>
         <button
           type="button"
           @click="ui.resolveConfirm()"
-          class="modal-btn-danger"
+          :class="ui.confirmVariant === 'primary'
+            ? 'px-[18px] py-2 text-sm font-medium rounded-lg cursor-pointer border-none text-white bg-primary transition-opacity hover:opacity-85'
+            : 'px-[18px] py-2 text-sm font-medium rounded-lg cursor-pointer border-none text-danger bg-red-500/10 transition-colors hover:bg-red-500/20'"
         >
-          删除
+          {{ ui.confirmButtonText }}
         </button>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.modal-btn-cancel {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  transition: background-color 0.15s, color 0.15s;
-}
-.modal-btn-danger {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  border: none;
-  color: #f85149;
-  background-color: rgba(248, 81, 73, 0.1);
-  transition: background-color 0.15s;
-}
-.modal-btn-danger:hover {
-  background-color: rgba(248, 81, 73, 0.2);
-}
-</style>

@@ -11,6 +11,7 @@
   --color-note: var(--note-color);
   --color-navbar: var(--navbar-bg);
   --color-search: var(--search-bg);
+  --color-primary: var(--btn-primary-bg);
   --color-danger: #f85149;
   --color-overlay: rgba(0,0,0,0.4);
 }

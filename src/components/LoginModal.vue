@@ -62,7 +62,7 @@ async function handleLogin() {
         <button
           type="button"
           @click="emit('close')"
-          class="modal-btn-cancel"
+          class="px-[18px] py-2 text-sm font-medium rounded-lg cursor-pointer bg-transparent border border-border text-text transition-colors"
         >
           取消
         </button>
@@ -70,7 +70,7 @@ async function handleLogin() {
           type="button"
           :disabled="loading"
           @click="handleLogin"
-          class="modal-btn-primary"
+          class="px-[18px] py-2 text-sm font-medium rounded-lg cursor-pointer border-none text-white bg-primary transition-opacity hover:opacity-85"
         >
           {{ loading ? '登录中...' : '登录' }}
         </button>
@@ -78,31 +78,3 @@ async function handleLogin() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.modal-btn-cancel {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  transition: background-color 0.15s, color 0.15s;
-}
-.modal-btn-primary {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  border: none;
-  color: white;
-  background-color: var(--btn-primary-bg);
-  transition: opacity 0.15s;
-}
-.modal-btn-primary:hover {
-  opacity: 0.85;
-}
-</style>

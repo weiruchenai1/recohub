@@ -11,34 +11,11 @@ const ui = useUiStore()
         v-for="tab in ui.categoryOptions"
         :key="tab.key"
         @click="ui.setTab(tab.key)"
-        class="tab-btn"
-        :class="ui.activeTab === tab.key ? 'tab-btn-active' : 'tab-btn-inactive'"
+        class="py-3 px-6 text-lg font-medium bg-transparent border-none border-b-2 border-b-transparent cursor-pointer transition-[color,border-color] duration-200"
+        :class="ui.activeTab === tab.key ? 'border-b-link text-link' : 'text-note hover:text-text'"
       >
         {{ tab.label }}
       </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.tab-btn {
-  padding: 12px 24px;
-  font-size: 18px;
-  font-weight: 500;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-.tab-btn-active {
-  border-bottom-color: var(--link-color);
-  color: var(--link-color);
-}
-.tab-btn-inactive {
-  color: var(--note-color);
-}
-.tab-btn-inactive:hover {
-  color: var(--text-color);
-}
-</style>

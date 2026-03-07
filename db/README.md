@@ -106,6 +106,39 @@ npm run db:migrate
 npm run db:migrate:local
 ```
 
+## 数据导入导出
+
+系统设置面板中的「数据管理」标签页提供了图形化的数据导入导出功能。也可以直接调用 API：
+
+| 方法 | 路径 | 说明 | 鉴权 |
+|------|------|------|------|
+| `GET` | `/api/db/export` | 导出所有分组和条目为 JSON | 是 |
+| `POST` | `/api/db/import` | 从 JSON 导入分组和条目 | 是 |
+
+### 导出格式
+
+```json
+{
+  "version": 1,
+  "exported_at": "2025-01-01T00:00:00.000Z",
+  "categories": [
+    { "key": "software", "label": "软件", "sort_order": 0 }
+  ],
+  "items": [
+    { "category": "software", "name": "示例", "url": "https://example.com", "note": "", "sort_order": 0, "icon_url": null, "created_at": "...", "updated_at": "..." }
+  ]
+}
+```
+
+### 导入模式
+
+请求体中通过 `mode` 字段指定导入模式：
+
+| 模式 | 说明 |
+|------|------|
+| `merge`（默认） | 保留现有数据，仅添加不存在的分组和条目（按 `category + url` 去重） |
+| `overwrite` | 清空所有现有分组和条目后导入 |
+
 ## 独立迁移脚本
 
 `db/migrate.sql` 是一个完整的幂等 schema 脚本，包含所有表的 `CREATE TABLE IF NOT EXISTS` 和种子数据，末尾将 `_schema_version` 设为最新版本。可安全重复执行。

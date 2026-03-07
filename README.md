@@ -37,7 +37,7 @@ recohub/
 │   │   ├── ItemGridCard.vue      # 网格卡片组件
 │   │   ├── ItemModal.vue         # 新增/编辑/投稿弹窗（含图标获取与上传，访客投稿模式）
 │   │   ├── LoginModal.vue        # 登录弹窗
-│   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理、图标管理、审核管理）
+│   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理、图标管理、数据管理、审核管理）
 │   │   ├── ReviewPanel.vue       # 审核管理面板（查看/通过/驳回访客投稿）
 │   │   ├── SearchDropdown.vue    # 搜索下拉结果
 │   │   ├── PaginationBar.vue     # 分页控件
@@ -77,10 +77,14 @@ recohub/
 │       ├── categories/
 │       │   ├── index.ts          # 分类列表 / 新增 / 批量更新排序
 │       │   └── [key].ts          # 删除分类
+│       ├── db/
+│       │   ├── export.ts         # 数据导出（JSON 格式）
+│       │   └── import.ts         # 数据导入（合并/覆盖模式）
 │       ├── items/
 │       │   ├── index.ts          # 列表查询 / 新增（自动获取图标）
 │       │   ├── [id].ts           # 单条编辑 / 删除
-│       │   └── batch.ts          # 批量操作（删除/移动）
+│       │   ├── batch.ts          # 批量操作（删除/移动）
+│       │   └── fetch-icons.ts    # 批量获取缺失图标
 │       └── submissions/
 │           ├── index.ts          # 投稿列表查询 / 访客提交（含防刷限制）
 │           ├── count.ts          # 待审核数量
@@ -128,7 +132,7 @@ recohub/
 - [x] **响应式布局** - 适配桌面端与移动端
 - [x] **状态持久化** - UI 偏好（主题、布局、分页等）保存到 localStorage，分类配置存储在后端数据库
 - [x] **个性化设置** - 可配置 LOGO 显示/隐藏、自定义文本
-- [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理、图标管理、审核管理
+- [x] **系统设置面板** - 统一的设置弹窗，含账号管理、个性化、分组管理、图标管理、数据管理、审核管理
 - [x] **账号菜单** - 导航栏用户图标，登录后显示下拉菜单快速访问设置
 - [x] **URL 校验** - 后端 API 新增/编辑时校验 URL 格式，仅允许 http/https 协议
 - [x] **后端 API** - 完整的 RESTful API，含认证中间件
@@ -137,7 +141,8 @@ recohub/
 ### 待完成/可扩展
 
 - [ ] 国际化（i18n）支持
-- [ ] 数据导入/导出
+- [x] **数据导入/导出** - 系统设置中的数据管理标签页，支持导出全部数据为 JSON，支持合并导入和覆盖导入两种模式
+- [x] **批量获取图标** - 图标管理中一键为所有缺失图标的条目自动获取网站图标
 - [ ] 用户注册与多用户支持
 - [ ] 标签系统
 - [ ] 评分/评论功能
@@ -156,6 +161,7 @@ recohub/
 | `PUT` | `/api/items/:id` | 编辑条目（支持 `icon_url` 字段） | 是 |
 | `DELETE` | `/api/items/:id` | 删除条目 | 是 |
 | `POST` | `/api/items/batch` | 批量操作（删除/移动） | 是 |
+| `POST` | `/api/items/fetch-icons` | 批量获取缺失图标 | 是 |
 | `GET` | `/api/icons` | 获取所有已上传图标列表 | 否 |
 | `POST` | `/api/icons` | 上传本地图标文件到 R2（FormData） | 是 |
 | `GET` | `/api/icons/:key` | 访问图标文件（强缓存，immutable） | 否 |
@@ -167,6 +173,8 @@ recohub/
 | `GET` | `/api/submissions/count` | 获取待审核投稿数量 | 是 |
 | `POST` | `/api/submissions/:id/approve` | 通过投稿（转为正式条目，支持编辑后通过） | 是 |
 | `DELETE` | `/api/submissions/:id` | 驳回/删除投稿 | 是 |
+| `GET` | `/api/db/export` | 导出所有数据为 JSON | 是 |
+| `POST` | `/api/db/import` | 导入数据（支持合并/覆盖模式） | 是 |
 
 ## 本地开发
 

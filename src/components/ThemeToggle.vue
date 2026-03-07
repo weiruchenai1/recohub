@@ -11,13 +11,13 @@ const ui = useUiStore()
       role="switch"
       :aria-checked="ui.theme === 'dark'"
       aria-label="Toggle Theme"
-      class="toggle-track"
-      :class="ui.theme === 'dark' ? 'toggle-track-dark' : 'toggle-track-light'"
+      class="relative block w-10 h-[22px] rounded-[11px] border border-border p-0 cursor-pointer transition-[border-color,background-color] duration-[250ms]"
+      :class="ui.theme === 'dark' ? 'bg-[#313136]' : 'bg-[#e1e1e1]'"
       @click="ui.toggleTheme()"
     >
       <span
-        class="toggle-thumb"
-        :class="ui.theme === 'dark' ? 'toggle-thumb-dark' : 'toggle-thumb-light'"
+        class="absolute top-px left-px w-[18px] h-[18px] rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-[transform,background-color] duration-[250ms]"
+        :class="ui.theme === 'dark' ? 'bg-black translate-x-[18px]' : 'bg-white translate-x-0'"
       >
         <span class="relative block w-[18px] h-[18px] rounded-full overflow-hidden">
           <!-- Sun -->
@@ -51,41 +51,3 @@ const ui = useUiStore()
     </button>
   </div>
 </template>
-
-<style scoped>
-.toggle-track {
-  position: relative;
-  display: block;
-  width: 40px;
-  height: 22px;
-  border-radius: 11px;
-  border: 1px solid var(--border-color);
-  padding: 0;
-  cursor: pointer;
-  transition: border-color 0.25s, background-color 0.25s;
-}
-.toggle-track-light {
-  background-color: #e1e1e1;
-}
-.toggle-track-dark {
-  background-color: #313136;
-}
-.toggle-thumb {
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  transition: transform 0.25s, background-color 0.25s;
-}
-.toggle-thumb-light {
-  background-color: #fff;
-  transform: translateX(0);
-}
-.toggle-thumb-dark {
-  background-color: #000;
-  transform: translateX(18px);
-}
-</style>

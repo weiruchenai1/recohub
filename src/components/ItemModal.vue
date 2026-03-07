@@ -198,7 +198,7 @@ function submitLabel(): string {
         </div>
         <h3 class="text-[17px] font-semibold text-text mb-2">提交成功</h3>
         <p class="text-sm text-note mb-5">感谢您的推荐！管理员审核通过后将会显示在列表中。</p>
-        <button type="button" @click="emit('close')" class="modal-btn-primary">关闭</button>
+        <button type="button" @click="emit('close')" class="py-2 px-[18px] text-sm font-medium rounded-lg cursor-pointer border-none text-white bg-primary transition-opacity hover:opacity-85">关闭</button>
       </div>
 
       <!-- Form -->
@@ -211,7 +211,7 @@ function submitLabel(): string {
         <div v-if="form.icon_url" class="mb-4 flex items-center gap-3">
           <img :src="form.icon_url" alt="" class="w-10 h-10 rounded-lg object-contain shrink-0" />
           <span class="text-xs text-note flex-1">已设置自定义图标</span>
-          <button type="button" class="icon-remove-btn" @click="removeIcon">移除</button>
+          <button type="button" class="py-1 px-2.5 text-xs font-medium rounded-md border border-danger text-danger bg-transparent cursor-pointer shrink-0 transition-colors hover:bg-red-500/10" @click="removeIcon">移除</button>
         </div>
 
         <div class="mb-3.5">
@@ -296,10 +296,10 @@ function submitLabel(): string {
         </div>
 
         <div class="flex justify-end gap-2 mt-[22px]">
-          <button type="button" @click="emit('close')" class="modal-btn-cancel">
+          <button type="button" @click="emit('close')" class="py-2 px-[18px] text-sm font-medium rounded-lg cursor-pointer bg-transparent border border-border text-text transition-colors">
             取消
           </button>
-          <button type="button" :disabled="saving" @click="handleSubmit" class="modal-btn-primary">
+          <button type="button" :disabled="saving" @click="handleSubmit" class="py-2 px-[18px] text-sm font-medium rounded-lg cursor-pointer border-none text-white bg-primary transition-opacity hover:opacity-85">
             {{ submitLabel() }}
           </button>
         </div>
@@ -408,22 +408,6 @@ function submitLabel(): string {
   cursor: not-allowed;
 }
 
-.icon-remove-btn {
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: 6px;
-  border: 1px solid var(--danger);
-  background: transparent;
-  color: var(--danger);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background-color 0.15s;
-}
-.icon-remove-btn:hover {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
 .icon-candidate {
   position: relative;
   width: 72px;
@@ -457,31 +441,5 @@ function submitLabel(): string {
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
   border-radius: 8px;
-}
-
-.modal-btn-cancel {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  transition: background-color 0.15s, color 0.15s;
-}
-.modal-btn-primary {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  border: none;
-  color: white;
-  background-color: var(--btn-primary-bg);
-  transition: opacity 0.15s;
-}
-.modal-btn-primary:hover {
-  opacity: 0.85;
 }
 </style>

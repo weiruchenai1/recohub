@@ -20,9 +20,9 @@ const isChecked = () => items.selectedIds.has(props.item.id)
 
 <template>
   <tr
-    class="table-row"
+    class="transition-colors duration-200"
     :class="{
-      'row-checked': isChecked(),
+      'opacity-45': isChecked(),
       'even-row': !isChecked() && index % 2 === 0,
       'odd-row': !isChecked() && index % 2 !== 0,
     }"
@@ -56,9 +56,6 @@ const isChecked = () => items.selectedIds.has(props.item.id)
 </template>
 
 <style scoped>
-.table-row {
-  transition: background-color 0.2s;
-}
 .even-row {
   background-color: var(--row-bg);
 }

@@ -3,12 +3,14 @@ import { ref, computed, watch } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { useItemsStore } from '@/stores/items'
 import { api, ApiRequestError } from '@/lib/api'
 import type { IconInfo } from '@/types'
 import ReviewPanel from '@/components/ReviewPanel.vue'
 
 const ui = useUiStore()
 const auth = useAuthStore()
+const itemsStore = useItemsStore()
 
 const baseSidebarItems = [
   { key: 'account', label: '我的账号', icon: 'user' },
@@ -18,6 +20,7 @@ const baseSidebarItems = [
 ]
 
 const adminSidebarItems = [
+  { key: 'data', label: '数据管理', icon: 'database' },
   { key: 'review', label: '审核管理', icon: 'inbox' },
 ]
 
@@ -79,7 +82,7 @@ async function removeGroup(index: number) {
         }
         groupErrorTimer = setTimeout(() => { groupError.value = ''; groupErrorIndex.value = -1 }, 3000)
       }
-    })
+    }, { buttonText: '删除' })
   }, auth.isLoggedIn)
 }
 
@@ -118,8 +121,99 @@ async function deleteIcon(icon: IconInfo) {
       } catch {
         // silently fail
       }
-    })
+    }, { buttonText: '删除' })
   }, auth.isLoggedIn)
+}
+
+// --- Batch icon fetch ---
+const batchIconLoading = ref(false)
+const batchIconResult = ref<{ total: number; fetched: number; failed: number } | null>(null)
+
+async function batchFetchIcons() {
+  ui.requireAuthOrLogin(() => {
+    ui.confirm('获取图标', '将为所有没有图标的条目自动获取图标，此操作可能需要一些时间。', async () => {
+      batchIconLoading.value = true
+      batchIconResult.value = null
+      try {
+        const res = await api.post<{ total: number; fetched: number; failed: number }>('/items/fetch-icons', {})
+        batchIconResult.value = res
+        // Refresh icons list
+        fetchIcons()
+      } catch {
+        batchIconResult.value = null
+      } finally {
+        batchIconLoading.value = false
+      }
+    }, { buttonText: '确认', variant: 'primary' })
+  }, auth.isLoggedIn)
+}
+
+// --- Data management ---
+const exportLoading = ref(false)
+const importLoading = ref(false)
+const importResult = ref<{ categories_imported: number; items_imported: number; items_skipped: number } | null>(null)
+const importError = ref('')
+const importMode = ref<'merge' | 'overwrite'>('merge')
+const fileInput = ref<HTMLInputElement | null>(null)
+
+async function exportData() {
+  exportLoading.value = true
+  try {
+    const data = await api.get<Record<string, unknown>>('/db/export')
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `recohub-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    // silently fail
+  } finally {
+    exportLoading.value = false
+  }
+}
+
+function triggerImport() {
+  fileInput.value?.click()
+}
+
+async function handleImportFile(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  importLoading.value = true
+  importResult.value = null
+  importError.value = ''
+
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    data.mode = importMode.value
+
+    const res = await api.post<{ categories_imported: number; items_imported: number; items_skipped: number }>('/db/import', data)
+    importResult.value = res
+
+    // Refresh categories and current items list
+    await ui.fetchCategories()
+    await itemsStore.fetchItems({
+      category: ui.activeTab,
+      page: ui.page,
+      perPage: ui.perPage,
+    })
+  } catch (err) {
+    if (err instanceof ApiRequestError) {
+      importError.value = err.message
+    } else if (err instanceof SyntaxError) {
+      importError.value = '文件格式错误，请选择有效的 JSON 文件'
+    } else {
+      importError.value = '导入失败，请检查文件格式'
+    }
+  } finally {
+    importLoading.value = false
+    // Reset file input
+    if (fileInput.value) fileInput.value.value = ''
+  }
 }
 
 watch(activeTab, (tab) => {
@@ -175,6 +269,12 @@ watch(activeTab, (tab) => {
               <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
               <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
             </svg>
+            <!-- database -->
+            <svg v-else-if="item.icon === 'database'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
             <span>{{ item.label }}</span>
           </button>
         </nav>
@@ -190,11 +290,11 @@ watch(activeTab, (tab) => {
         </button>
 
         <!-- Account -->
-        <div v-if="activeTab === 'account'" class="settings-panel">
-          <h2 class="settings-title">我的账号</h2>
+        <div v-if="activeTab === 'account'" class="py-7 px-8">
+          <h2 class="text-lg font-semibold m-0 mb-6 text-text">我的账号</h2>
 
-          <div class="setting-section">
-            <h4 class="setting-label">登录状态</h4>
+          <div class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">登录状态</h4>
             <div class="flex items-center gap-3 mt-2">
               <span
                 class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
@@ -206,8 +306,8 @@ watch(activeTab, (tab) => {
             </div>
           </div>
 
-          <div v-if="auth.isLoggedIn" class="setting-section">
-            <h4 class="setting-label">操作</h4>
+          <div v-if="auth.isLoggedIn" class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">操作</h4>
             <button
               class="mt-2 px-4 py-2 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent cursor-pointer hover:bg-red-500/10 transition-colors"
               @click="auth.logout(); close()"
@@ -218,12 +318,12 @@ watch(activeTab, (tab) => {
         </div>
 
         <!-- Personalization -->
-        <div v-else-if="activeTab === 'personalize'" class="settings-panel">
-          <h2 class="settings-title">个性化设置</h2>
+        <div v-else-if="activeTab === 'personalize'" class="py-7 px-8">
+          <h2 class="text-lg font-semibold m-0 mb-6 text-text">个性化设置</h2>
 
           <!-- LOGO visibility -->
-          <div class="setting-section">
-            <h4 class="setting-label">LOGO</h4>
+          <div class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">LOGO</h4>
             <div class="flex items-center justify-between mt-2">
               <span class="text-sm text-text">显示</span>
               <button
@@ -240,8 +340,8 @@ watch(activeTab, (tab) => {
           </div>
 
           <!-- LOGO text -->
-          <div class="setting-section">
-            <h4 class="setting-label">文本内容</h4>
+          <div class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">文本内容</h4>
             <div class="relative mt-2">
               <input
                 v-model="ui.logoText"
@@ -258,12 +358,12 @@ watch(activeTab, (tab) => {
         </div>
 
         <!-- Group management -->
-        <div v-else-if="activeTab === 'groups'" class="settings-panel">
-          <h2 class="settings-title">分组管理</h2>
+        <div v-else-if="activeTab === 'groups'" class="py-7 px-8">
+          <h2 class="text-lg font-semibold m-0 mb-6 text-text">分组管理</h2>
 
-          <div class="setting-section">
+          <div class="mb-6">
             <div class="flex items-center justify-between">
-              <h4 class="setting-label">当前分组</h4>
+              <h4 class="text-[13px] font-semibold m-0 text-link">当前分组</h4>
             </div>
             <VueDraggable
               v-model="ui.categories"
@@ -275,7 +375,7 @@ watch(activeTab, (tab) => {
               @end="onDragEnd"
             >
               <div v-for="(cat, index) in ui.categories" :key="cat.key" class="group-item-wrapper">
-                <div class="group-item">
+                <div class="flex items-center gap-1 rounded-md">
                   <span class="drag-handle flex items-center text-note shrink-0 cursor-grab active:cursor-grabbing">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                       <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
@@ -308,8 +408,8 @@ watch(activeTab, (tab) => {
             </VueDraggable>
           </div>
 
-          <div class="setting-section">
-            <h4 class="setting-label">添加分组</h4>
+          <div class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">添加分组</h4>
             <div class="flex gap-2 mt-2">
               <input
                 v-model="newGroupLabel"
@@ -319,8 +419,7 @@ watch(activeTab, (tab) => {
                 @keydown.enter="addGroup"
               />
               <button
-                class="shrink-0 px-4 py-2 text-sm font-medium rounded-lg border-none text-white cursor-pointer transition-opacity hover:opacity-85"
-                :style="{ backgroundColor: 'var(--btn-primary-bg)' }"
+                class="shrink-0 px-4 py-2 text-sm font-medium rounded-lg border-none bg-primary text-white cursor-pointer transition-opacity hover:opacity-85"
                 @click="addGroup"
               >
                 添加
@@ -330,8 +429,8 @@ watch(activeTab, (tab) => {
         </div>
 
         <!-- Icon management -->
-        <div v-else-if="activeTab === 'icons'" class="settings-panel">
-          <h2 class="settings-title">
+        <div v-else-if="activeTab === 'icons'" class="py-7 px-8">
+          <h2 class="text-lg font-semibold m-0 mb-6 text-text">
             图标管理
             <button
               class="ml-3 p-1 rounded-lg bg-transparent border-none cursor-pointer text-note hover:text-text transition-colors align-middle"
@@ -346,6 +445,22 @@ watch(activeTab, (tab) => {
             </button>
           </h2>
 
+          <!-- Batch fetch icons -->
+          <div class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">批量获取图标</h4>
+            <p class="text-xs text-note mt-1 mb-2">为所有没有图标的条目自动获取网站图标</p>
+            <button
+              class="px-4 py-2 text-sm font-medium rounded-lg border-none bg-primary text-white cursor-pointer transition-opacity hover:opacity-85 disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="batchIconLoading"
+              @click="batchFetchIcons"
+            >
+              {{ batchIconLoading ? '获取中...' : '一键获取图标' }}
+            </button>
+            <div v-if="batchIconResult" class="mt-2 px-3 py-2 text-xs rounded-md bg-green-500/10 text-green-600 dark:text-green-400">
+              共 {{ batchIconResult.total }} 个缺失图标，成功获取 {{ batchIconResult.fetched }} 个<span v-if="batchIconResult.failed">，{{ batchIconResult.failed }} 个获取失败</span>
+            </div>
+          </div>
+
           <div v-if="iconsLoading && icons.length === 0" class="text-sm text-note">
             加载中...
           </div>
@@ -354,8 +469,8 @@ watch(activeTab, (tab) => {
             暂无已上传的图标
           </div>
 
-          <div v-else class="icon-grid">
-            <div v-for="icon in icons" :key="icon.key" class="icon-card">
+          <div v-else class="flex flex-col gap-2">
+            <div v-for="icon in icons" :key="icon.key" class="flex items-center gap-3 py-2 px-2.5 rounded-lg bg-search transition-colors hover:bg-header">
               <img :src="icon.url" alt="" class="w-10 h-10 rounded-lg object-contain" />
               <div class="flex-1 min-w-0">
                 <div class="text-xs text-text truncate" :title="icon.key">{{ icon.key }}</div>
@@ -371,6 +486,60 @@ watch(activeTab, (tab) => {
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data management -->
+        <div v-else-if="activeTab === 'data'" class="py-7 px-8">
+          <h2 class="text-lg font-semibold m-0 mb-6 text-text">数据管理</h2>
+
+          <!-- Export -->
+          <div class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">导出数据</h4>
+            <p class="text-xs text-note mt-1 mb-2">将所有分组和条目导出为 JSON 文件</p>
+            <button
+              class="px-4 py-2 text-sm font-medium rounded-lg border-none bg-primary text-white cursor-pointer transition-opacity hover:opacity-85 disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="exportLoading"
+              @click="exportData"
+            >
+              {{ exportLoading ? '导出中...' : '导出数据' }}
+            </button>
+          </div>
+
+          <!-- Import -->
+          <div class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">导入数据</h4>
+            <p class="text-xs text-note mt-1 mb-2">从 JSON 文件导入分组和条目</p>
+
+            <div class="flex items-center gap-4 mb-3">
+              <label class="flex items-center gap-1.5 text-sm text-text cursor-pointer">
+                <input type="radio" value="merge" v-model="importMode" class="accent-primary" />
+                合并导入
+              </label>
+              <label class="flex items-center gap-1.5 text-sm text-text cursor-pointer">
+                <input type="radio" value="overwrite" v-model="importMode" class="accent-primary" />
+                覆盖导入
+              </label>
+            </div>
+            <p v-if="importMode === 'merge'" class="text-xs text-note mb-2">合并模式：保留现有数据，仅添加不存在的分组和条目</p>
+            <p v-else class="text-xs text-danger mb-2">覆盖模式：将清空现有所有分组和条目，然后导入文件中的数据</p>
+
+            <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleImportFile" />
+            <button
+              class="px-4 py-2 text-sm font-medium rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              :class="importMode === 'overwrite' ? 'border border-danger text-danger bg-transparent hover:bg-red-500/10' : 'border border-transparent bg-primary text-white hover:opacity-85'"
+              :disabled="importLoading"
+              @click="importMode === 'overwrite' ? ui.confirm('覆盖导入', '此操作将清空所有现有数据！确定要继续吗？', triggerImport, { buttonText: '确认覆盖' }) : triggerImport()"
+            >
+              {{ importLoading ? '导入中...' : '选择文件并导入' }}
+            </button>
+
+            <div v-if="importResult" class="mt-2 px-3 py-2 text-xs rounded-md bg-green-500/10 text-green-600 dark:text-green-400">
+              导入完成：{{ importResult.categories_imported }} 个分组，{{ importResult.items_imported }} 个条目<span v-if="importResult.items_skipped">，{{ importResult.items_skipped }} 个条目已跳过（重复）</span>
+            </div>
+            <div v-if="importError" class="mt-2 px-3 py-2 text-xs rounded-md bg-red-500/10 text-danger">
+              {{ importError }}
             </div>
           </div>
         </div>
@@ -414,28 +583,6 @@ watch(activeTab, (tab) => {
   display: none;
 }
 
-.settings-panel {
-  padding: 28px 32px;
-}
-
-.settings-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0 0 24px 0;
-  color: var(--text-color);
-}
-
-.setting-section {
-  margin-bottom: 24px;
-}
-
-.setting-label {
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0;
-  color: var(--link-color);
-}
-
 .sidebar-item {
   display: flex;
   align-items: center;
@@ -471,8 +618,8 @@ watch(activeTab, (tab) => {
   transition: background-color 0.25s, border-color 0.25s;
 }
 .settings-toggle-on {
-  background-color: var(--btn-primary-bg);
-  border-color: var(--btn-primary-bg);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 .settings-toggle-off {
   background-color: var(--search-bg);
@@ -490,12 +637,6 @@ watch(activeTab, (tab) => {
 }
 
 /* Group items */
-.group-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 6px;
-}
 .group-item-ghost {
   opacity: 0.4;
 }
@@ -516,26 +657,6 @@ watch(activeTab, (tab) => {
 .group-action-btn:hover:not(:disabled) {
   color: var(--text-color);
   background-color: var(--search-bg);
-}
-
-/* Icon management */
-.icon-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.icon-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background-color: var(--search-bg);
-  transition: background-color 0.15s;
-}
-.icon-card:hover {
-  background-color: var(--header-bg);
 }
 
 @media (max-width: 640px) {

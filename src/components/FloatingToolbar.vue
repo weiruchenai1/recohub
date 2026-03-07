@@ -50,7 +50,7 @@ async function handleDelete() {
       await items.batchDelete(ids)
       items.clearSelection()
       emit('refresh')
-    })
+    }, { buttonText: '删除' })
   }, auth.isLoggedIn)
 }
 
@@ -113,7 +113,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
           v-for="opt in moveTargets"
           :key="opt.key"
           @click="confirmMove(opt.key)"
-          class="move-menu-item"
+          class="block w-full py-1.5 px-4 text-[13px] font-medium text-text bg-transparent border-none cursor-pointer whitespace-nowrap text-left transition-colors duration-150 hover:bg-header"
         >
           移动到「{{ opt.label }}」
         </button>
@@ -180,24 +180,6 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
 }
 .float-btn-danger:hover {
   background-color: rgba(248, 81, 73, 0.1);
-}
-.move-menu-item {
-  display: block;
-  width: 100%;
-  padding: 6px 16px;
-  font-size: 13px;
-  font-family: inherit;
-  font-weight: 500;
-  color: var(--text-color);
-  background: none;
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-  text-align: left;
-  transition: background-color 0.15s;
-}
-.move-menu-item:hover {
-  background-color: var(--header-bg);
 }
 
 .floating-toolbar {

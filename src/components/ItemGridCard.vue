@@ -28,8 +28,8 @@ function firstChar(): string {
 
 <template>
   <div
-    class="grid-card"
-    :class="{ 'grid-card-checked': isChecked() }"
+    class="relative flex flex-col p-4 border border-border rounded-[10px] bg-row cursor-default transition-[background-color,box-shadow,border-color] duration-200 hover:bg-header hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+    :class="{ 'opacity-45': isChecked() }"
   >
     <!-- Checkbox -->
     <div
@@ -80,24 +80,3 @@ function firstChar(): string {
     </div>
   </div>
 </template>
-
-<style scoped>
-.grid-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  background-color: var(--row-bg);
-  cursor: default;
-  transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
-}
-.grid-card:hover {
-  background-color: var(--header-bg);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.grid-card-checked {
-  opacity: 0.45;
-}
-</style>

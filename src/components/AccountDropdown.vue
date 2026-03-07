@@ -54,7 +54,7 @@ onBeforeUnmount(() => {
     <button
       v-for="item in menuItems"
       :key="item.key"
-      class="dropdown-item"
+      class="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] font-medium bg-none border-none text-text cursor-pointer transition-colors text-left hover:bg-header"
       @click="handleClick(item.key)"
     >
       <!-- user -->
@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
 
     <div class="h-px bg-border"></div>
 
-    <button class="dropdown-item text-danger" @click="handleLogout">
+    <button class="flex items-center gap-2.5 w-full px-4 py-2.5 text-[13px] font-medium bg-none border-none text-danger cursor-pointer transition-colors text-left hover:bg-header" @click="handleLogout">
       <svg class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
         <polyline points="16 17 21 12 16 7"/>
@@ -94,24 +94,3 @@ onBeforeUnmount(() => {
     </button>
   </div>
 </template>
-
-<style scoped>
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  background: none;
-  border: none;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: background-color 0.1s;
-  text-align: left;
-}
-.dropdown-item:hover {
-  background-color: var(--header-bg);
-}
-</style>

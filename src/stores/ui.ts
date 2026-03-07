@@ -25,6 +25,8 @@ export const useUiStore = defineStore('ui', () => {
   const confirmTitle = ref('')
   const confirmMessage = ref('')
   const confirmCallback = ref<(() => void) | null>(null)
+  const confirmButtonText = ref('确认')
+  const confirmVariant = ref<'danger' | 'primary'>('danger')
 
   // Settings modal
   const showSettingsModal = ref(false)
@@ -99,10 +101,12 @@ export const useUiStore = defineStore('ui', () => {
     showSettingsModal.value = true
   }
 
-  function confirm(title: string, message: string, onConfirm: () => void) {
+  function confirm(title: string, message: string, onConfirm: () => void, options?: { buttonText?: string; variant?: 'danger' | 'primary' }) {
     confirmTitle.value = title
     confirmMessage.value = message
     confirmCallback.value = onConfirm
+    confirmButtonText.value = options?.buttonText || '确认'
+    confirmVariant.value = options?.variant || 'danger'
     showConfirmDialog.value = true
   }
 
@@ -162,7 +166,7 @@ export const useUiStore = defineStore('ui', () => {
     theme, layout, activeTab, checklistEnabled,
     globalSearch, localSearch, page, perPage,
     showLoginModal, showItemModal, pendingAction,
-    showConfirmDialog, confirmTitle, confirmMessage,
+    showConfirmDialog, confirmTitle, confirmMessage, confirmButtonText, confirmVariant,
     showSettingsModal, settingsTab,
     logoVisible, logoText,
     categories, categoryOptions, categoriesLoaded,

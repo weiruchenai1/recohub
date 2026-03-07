@@ -60,7 +60,7 @@ onBeforeUnmount(() => {
       :href="item.url"
       target="_blank"
       rel="noopener noreferrer"
-      class="search-result-item"
+      class="flex items-center gap-2 py-2.5 px-3.5 border-b border-border text-[13px] font-medium no-underline text-link cursor-pointer transition-colors duration-100 hover:bg-header"
     >
       <span class="text-note font-normal shrink-0">#</span>
       <span class="text-text font-medium">{{ item.name }}</span>
@@ -77,22 +77,3 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.search-result-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--link-color);
-  cursor: pointer;
-  transition: background-color 0.1s;
-}
-.search-result-item:hover {
-  background-color: var(--header-bg);
-}
-</style>
