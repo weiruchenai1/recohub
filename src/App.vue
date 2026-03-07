@@ -68,13 +68,6 @@ watch(() => ui.page, () => {
 </script>
 
 <template>
-  <!-- Wallpaper layer -->
-  <div
-    v-if="ui.wallpaper"
-    class="fixed inset-0 z-0 transition-[background] duration-500"
-    :style="{ background: ui.wallpaper }"
-  ></div>
-
   <Navbar />
   <div class="max-w-[1200px] mx-auto w-[95%] relative z-[1]">
     <TabBar />

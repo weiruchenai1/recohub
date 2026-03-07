@@ -89,15 +89,6 @@ function onDragEnd() {
   }, auth.isLoggedIn)
 }
 
-// --- Wallpaper presets ---
-const wallpaperPresets = [
-  { label: '无', value: '' },
-  { label: '渐变蓝紫', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  { label: '渐变青绿', value: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)' },
-  { label: '渐变暖橙', value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  { label: '渐变深空', value: 'linear-gradient(135deg, #0c0c1d 0%, #1a1a3e 50%, #0c0c1d 100%)' },
-]
-
 // --- Icon management ---
 const icons = ref<IconInfo[]>([])
 const iconsLoading = ref(false)
@@ -264,26 +255,6 @@ watch(activeTab, (tab) => {
             </div>
           </div>
 
-          <!-- Wallpaper -->
-          <div class="setting-section">
-            <h4 class="setting-label">切换壁纸</h4>
-            <div class="grid grid-cols-5 gap-2 mt-2">
-              <button
-                v-for="preset in wallpaperPresets"
-                :key="preset.value"
-                class="wallpaper-btn"
-                :class="ui.wallpaper === preset.value && 'wallpaper-btn-active'"
-                :style="preset.value ? { background: preset.value } : {}"
-                :title="preset.label"
-                @click="ui.wallpaper = preset.value"
-              >
-                <span v-if="!preset.value" class="text-[10px] text-note leading-none">无</span>
-                <svg v-if="ui.wallpaper === preset.value" class="w-4 h-4 text-white drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              </button>
-            </div>
-          </div>
         </div>
 
         <!-- Group management -->
@@ -516,26 +487,6 @@ watch(activeTab, (tab) => {
   background-color: #fff;
   box-shadow: 0 1px 2px rgba(0,0,0,0.15);
   transition: transform 0.25s;
-}
-
-/* Wallpaper presets */
-.wallpaper-btn {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  border-radius: 8px;
-  border: 2px solid var(--border-color);
-  cursor: pointer;
-  transition: border-color 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--search-bg);
-}
-.wallpaper-btn:hover {
-  border-color: var(--link-color);
-}
-.wallpaper-btn-active {
-  border-color: var(--link-color);
 }
 
 /* Group items */

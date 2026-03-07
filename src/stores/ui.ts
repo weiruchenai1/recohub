@@ -33,8 +33,6 @@ export const useUiStore = defineStore('ui', () => {
   // Personalization
   const logoVisible = ref(localStorage.getItem('logoVisible') !== 'false')
   const logoText = ref(localStorage.getItem('logoText') || 'RecoHub')
-  const wallpaper = ref(localStorage.getItem('wallpaper') || '')
-
   // Dynamic categories — loaded from backend, fallback to defaults
   const categories = ref<CategoryOption[]>(DEFAULT_CATEGORIES)
   const categoriesLoaded = ref(false)
@@ -160,15 +158,13 @@ export const useUiStore = defineStore('ui', () => {
   watch(perPage, (v) => localStorage.setItem('perPage', String(v)))
   watch(logoVisible, (v) => localStorage.setItem('logoVisible', String(v)))
   watch(logoText, (v) => localStorage.setItem('logoText', v))
-  watch(wallpaper, (v) => localStorage.setItem('wallpaper', v))
-
   return {
     theme, layout, activeTab, checklistEnabled,
     globalSearch, localSearch, page, perPage,
     showLoginModal, showItemModal, pendingAction,
     showConfirmDialog, confirmTitle, confirmMessage,
     showSettingsModal, settingsTab,
-    logoVisible, logoText, wallpaper,
+    logoVisible, logoText,
     categories, categoryOptions, categoriesLoaded,
     fetchCategories, addCategory, removeCategory, updateCategory, syncCategories,
     openSettings,
