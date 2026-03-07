@@ -4,7 +4,7 @@
 
 - **引擎**：Cloudflare D1 (SQLite)
 - **对象存储**：Cloudflare R2（详见 [R2 对象存储说明](./R2.md)）
-- **初始化方式**：首次请求时由 `functions/api/_middleware.ts` 中的 `checkDB` 自动完成
+- **初始化方式**：首次请求时由 middleware 自动执行（SQL 来源于 `db/migrate.sql` + `db/seed.sql`，构建时嵌入）
 - **参考 Schema**：`db/schema.sql`
 
 ## 表结构
@@ -69,23 +69,34 @@
 
 ## 数据库初始化机制
 
-初始化逻辑位于 `functions/api/_middleware.ts` 的 `checkDB` 函数中。运行时不执行迁移，仅做轻量检查。
+`db/migrate.sql` 和 `db/seed.sql` 是数据库结构与种子数据的**唯一事实来源**。
+
+### 构建时嵌入
+
+构建时 `scripts/generate-schema.js` 读取这两个 SQL 文件，生成 `functions/lib/dbSchema.ts`（导出字符串常量）。middleware 在运行时 import 这些常量，无需在代码中重复编写 SQL。
+
+```
+db/migrate.sql  ──┐
+                   ├──  npm run prebuild  ──→  functions/lib/dbSchema.ts  ──→  middleware 引用
+db/seed.sql    ──┘
+```
 
 ### 运行时行为
 
+`functions/api/_middleware.ts` 中的 `checkDB` 在每次请求前执行轻量检查：
+
 | 场景 | 处理方式 |
 |---|---|
-| 全新数据库（无 `items` 表） | 用最新 schema 建表 + 写入种子数据，`_schema_version` 直接设为最新版本（幂等，并发安全） |
+| 全新数据库（无 `items` 表） | 自动执行 `MIGRATE_SQL` + `SEED_SQL` 建表并写入种子数据 |
 | 已有数据库，版本匹配 | 跳过，正常处理请求 |
-| 已有数据库，版本不匹配 | 返回 503 错误，提示需要运行 `db:migrate` |
+| 已有数据库，版本不匹配 | 返回 503 错误，提示运行 `db:migrate` |
 
 ### Schema 变更流程
 
-运行时不再执行迁移。Schema 变更需要：
-
 1. 更新 `db/schema.sql` 和 `db/migrate.sql`（保持幂等）
-2. 更新 `_middleware.ts` 中 `checkDB` 的 CREATE TABLE 语句和 `LATEST_VERSION` 常量
-3. 通过 npm script 执行迁移：
+2. 更新 `_middleware.ts` 中的 `EXPECTED_VERSION` 常量
+3. 重新构建（`npm run build` 会自动重新生成 `dbSchema.ts`）
+4. 对已有数据库手动执行迁移：
 
 ```bash
 # 远程数据库

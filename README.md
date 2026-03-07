@@ -64,9 +64,10 @@ recohub/
 ├── functions/                    # 后端 API（Cloudflare Pages Functions）
 │   ├── lib/                      # 后端公共库
 │   │   ├── autoIcon.ts           # 自动抓取网站 Favicon 并存入 R2（含 Key 生成规则、图标发现逻辑，共享给 icons API 调用）
+│   │   ├── dbSchema.ts           # [自动生成] 由 db/*.sql 构建时嵌入的 SQL 常量
 │   │   └── urlValidation.ts      # SSRF 防护（URL 校验，阻止私有 IP / localhost / 非 http(s) 协议）
 │   └── api/
-│       ├── _middleware.ts        # JWT 认证中间件 + 数据库初始化（轻量检查，无运行时迁移）
+│       ├── _middleware.ts        # JWT 认证中间件 + 数据库守卫（空库自动初始化，SQL 来自 dbSchema.ts）
 │       ├── login.ts              # 登录接口
 │       ├── icons/
 │       │   ├── index.ts          # 图标列表 / 上传（R2 存储）
@@ -131,7 +132,7 @@ recohub/
 - [x] **账号菜单** - 导航栏用户图标，登录后显示下拉菜单快速访问设置
 - [x] **URL 校验** - 后端 API 新增/编辑时校验 URL 格式，仅允许 http/https 协议
 - [x] **后端 API** - 完整的 RESTful API，含认证中间件
-- [x] **数据库设计** - D1 数据库表结构、索引与唯一约束（防重复插入），运行时轻量检查 + 独立幂等迁移脚本
+- [x] **数据库设计** - D1 数据库表结构、索引与唯一约束（防重复插入），SQL 文件为唯一事实来源，构建时自动嵌入 middleware，首次访问自动建表
 
 ### 待完成/可扩展
 
