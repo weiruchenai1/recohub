@@ -88,7 +88,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         item.url,
         item.note || '',
         item.sort_order ?? 0,
-        item.icon_url ?? null,
+        null,
         item.created_at || new Date().toISOString(),
         item.updated_at || new Date().toISOString(),
       ).run()

@@ -128,23 +128,71 @@ async function deleteIcon(icon: IconInfo) {
 // --- Batch icon fetch ---
 const batchIconLoading = ref(false)
 const batchIconResult = ref<{ total: number; fetched: number; failed: number } | null>(null)
+const batchIconProgress = ref<{ current: number; total: number; name: string } | null>(null)
 
 async function batchFetchIcons() {
   ui.requireAuthOrLogin(() => {
     ui.confirm('获取图标', '将为所有没有图标的条目自动获取图标，此操作可能需要一些时间。', async () => {
       batchIconLoading.value = true
       batchIconResult.value = null
+      batchIconProgress.value = null
       try {
-        const res = await api.post<{ total: number; fetched: number; failed: number }>('/items/fetch-icons', {})
-        batchIconResult.value = res
-        // Refresh icons list
+        const token = localStorage.getItem('auth_token')
+        const resp = await fetch('/api/items/fetch-icons', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: '{}',
+        })
+        if (!resp.ok || !resp.body) throw new Error('request failed')
+
+        const reader = resp.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+
+          const lines = buffer.split('\n')
+          buffer = lines.pop()!
+
+          for (const line of lines) {
+            if (!line.trim()) continue
+            const msg = JSON.parse(line)
+            if (msg.type === 'progress') {
+              batchIconProgress.value = { current: msg.current, total: msg.total, name: msg.name }
+            } else if (msg.type === 'done') {
+              batchIconResult.value = { total: msg.total, fetched: msg.fetched, failed: msg.failed }
+            }
+          }
+        }
+
         fetchIcons()
       } catch {
         batchIconResult.value = null
       } finally {
         batchIconLoading.value = false
+        batchIconProgress.value = null
       }
     }, { buttonText: '确认', variant: 'primary' })
+  }, auth.isLoggedIn)
+}
+
+async function deleteAllIcons() {
+  if (icons.value.length === 0) return
+  ui.requireAuthOrLogin(() => {
+    ui.confirm('删除全部图标', `确定删除全部 ${icons.value.length} 个图标？所有条目的图标将恢复为自动获取。`, async () => {
+      try {
+        await api.delete('/icons')
+        icons.value = []
+      } catch {
+        // silently fail
+      }
+    }, { buttonText: '全部删除' })
   }, auth.isLoggedIn)
 }
 
@@ -456,9 +504,34 @@ watch(activeTab, (tab) => {
             >
               {{ batchIconLoading ? '获取中...' : '一键获取图标' }}
             </button>
+            <!-- Progress bar -->
+            <div v-if="batchIconProgress" class="mt-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs text-note truncate mr-2">正在获取：{{ batchIconProgress.name }}</span>
+                <span class="text-xs text-text shrink-0">{{ batchIconProgress.current }} / {{ batchIconProgress.total }}</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-search overflow-hidden">
+                <div
+                  class="h-full rounded-full bg-primary transition-all duration-300"
+                  :style="{ width: (batchIconProgress.current / batchIconProgress.total * 100) + '%' }"
+                ></div>
+              </div>
+            </div>
             <div v-if="batchIconResult" class="mt-2 px-3 py-2 text-xs rounded-md bg-green-500/10 text-green-600 dark:text-green-400">
               共 {{ batchIconResult.total }} 个缺失图标，成功获取 {{ batchIconResult.fetched }} 个<span v-if="batchIconResult.failed">，{{ batchIconResult.failed }} 个获取失败</span>
             </div>
+          </div>
+
+          <!-- Delete all icons -->
+          <div v-if="icons.length > 0" class="mb-6">
+            <h4 class="text-[13px] font-semibold m-0 text-link">删除全部图标</h4>
+            <p class="text-xs text-note mt-1 mb-2">删除所有已上传的图标，条目将恢复为自动获取</p>
+            <button
+              class="px-4 py-2 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent cursor-pointer hover:bg-red-500/10 transition-colors"
+              @click="deleteAllIcons"
+            >
+              删除全部图标（{{ icons.length }}）
+            </button>
           </div>
 
           <div v-if="iconsLoading && icons.length === 0" class="text-sm text-note">

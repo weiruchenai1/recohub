@@ -139,6 +139,10 @@ npm run db:migrate:local
 | `merge`（默认） | 保留现有数据，仅添加不存在的分组和条目（按 `category + url` 去重） |
 | `overwrite` | 清空所有现有分组和条目后导入 |
 
+### 导入说明
+
+- 导入时 `icon_url` 字段会被自动忽略（强制设为 NULL），因为图标文件存储在 R2 中不随数据导出。导入后可通过图标管理中的「一键获取图标」重新获取。
+
 ## 独立迁移脚本
 
 `db/migrate.sql` 是一个完整的幂等 schema 脚本，包含所有表的 `CREATE TABLE IF NOT EXISTS` 和种子数据，末尾将 `_schema_version` 设为最新版本。可安全重复执行。

@@ -3,6 +3,7 @@
 import { getIconKey } from '../../lib/autoIcon'
 
 interface Env {
+  DB: D1Database
   ICONS: R2Bucket
 }
 
@@ -29,6 +30,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }))
 
   return new Response(JSON.stringify(icons), {
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export const onRequestDelete: PagesFunction<Env> = async (context) => {
+  const list = await context.env.ICONS.list()
+
+  if (list.objects.length === 0) {
+    return new Response(JSON.stringify({ success: true, deleted: 0 }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Delete all icon objects from R2
+  await Promise.all(list.objects.map((obj) => context.env.ICONS.delete(obj.key)))
+
+  // Clear all icon_url references in items
+  await context.env.DB.prepare(
+    "UPDATE items SET icon_url = NULL, updated_at = datetime('now') WHERE icon_url IS NOT NULL"
+  ).run()
+
+  return new Response(JSON.stringify({ success: true, deleted: list.objects.length }), {
     headers: { 'Content-Type': 'application/json' },
   })
 }
