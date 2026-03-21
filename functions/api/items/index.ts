@@ -1,4 +1,5 @@
 import { autoFetchIcon } from '../../lib/autoIcon'
+import { isValidHttpUrl } from '../../lib/urlValidation'
 
 interface Env {
   DB: D1Database
@@ -73,10 +74,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
-  try {
-    const parsed = new URL(body.url)
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error()
-  } catch {
+  if (!isValidHttpUrl(body.url)) {
     return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },

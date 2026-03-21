@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useFavicon } from '@/composables/useFavicon'
 import CustomCheckbox from '@/components/CustomCheckbox.vue'
+import StarRating from '@/components/StarRating.vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
+import { displayUrl } from '@/lib/utils'
 import type { Item } from '@/types'
 
 const props = defineProps<{
@@ -12,12 +13,7 @@ const props = defineProps<{
 
 const items = useItemsStore()
 const ui = useUiStore()
-const { faviconUrl } = useFavicon(props.item.icon_url)
 const faviconFailed = ref(false)
-
-function displayUrl(url: string): string {
-  try { return new URL(url).hostname } catch { return url }
-}
 
 const isChecked = () => items.selectedIds.has(props.item.id)
 
@@ -46,8 +42,8 @@ function firstChar(): string {
     <!-- Name with favicon -->
     <div class="flex items-center gap-2.5 text-[15px] font-semibold mb-2 pr-7 break-words text-text">
       <img
-        v-if="faviconUrl && !faviconFailed"
-        :src="faviconUrl"
+        v-if="item.icon_url && !faviconFailed"
+        :src="item.icon_url"
         alt=""
         class="w-8 h-8 rounded-md shrink-0 object-contain"
         @error="faviconFailed = true"
@@ -70,6 +66,11 @@ function firstChar(): string {
     >
       {{ displayUrl(item.url) }}
     </a>
+
+    <!-- Rating -->
+    <div class="mb-1">
+      <StarRating :item-id="item.id" />
+    </div>
 
     <!-- Note -->
     <div

@@ -1,15 +1,9 @@
+import { json } from '../../../lib/response'
 import { autoFetchIcon } from '../../../lib/autoIcon'
 
 interface Env {
   DB: D1Database
   ICONS: R2Bucket
-}
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
 }
 
 // POST /api/submissions/:id/approve — approve a submission, optionally with edits

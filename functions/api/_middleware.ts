@@ -6,6 +6,8 @@ interface Env {
   ICONS: R2Bucket
   AUTH_PASSWORD: string
   JWT_SECRET: string
+  LINUXDO_CLIENT_ID: string
+  LINUXDO_CLIENT_SECRET: string
 }
 
 type CFContext = EventContext<Env, string, unknown>
@@ -19,7 +21,7 @@ function unauthorized() {
 
 // -- Lightweight DB guard + auto-init from generated schema --
 
-const EXPECTED_VERSION = 6
+const EXPECTED_VERSION = 7
 let dbReady = false
 
 async function checkDB(db: D1Database) {
@@ -34,14 +36,14 @@ async function checkDB(db: D1Database) {
     await db.exec(MIGRATE_SQL)
     await db.exec(SEED_SQL)
   } else {
-    // Existing database — verify schema version
+    // Existing database — verify schema version, auto-migrate if behind
     const row = await db.prepare(
       'SELECT version FROM _schema_version LIMIT 1'
     ).first<{ version: number }>()
     const currentVersion = row?.version ?? 0
 
-    if (currentVersion !== EXPECTED_VERSION) {
-      throw new Error(`Schema version mismatch: expected ${EXPECTED_VERSION}, got ${currentVersion}. Run db:migrate.`)
+    if (currentVersion < EXPECTED_VERSION) {
+      await db.exec(MIGRATE_SQL)
     }
   }
 
@@ -68,9 +70,11 @@ export const onRequest: PagesFunction<Env> = async (context: CFContext) => {
   }
 
   // POST to /api/login, /api/submissions, /api/icons/fetch, /api/icons/save are public
+  // Rating POST handles its own visitor JWT verification
   const url = new URL(request.url)
   const publicPosts = ['/api/login', '/api/submissions', '/api/icons/fetch', '/api/icons/save']
-  if (method === 'POST' && publicPosts.includes(url.pathname)) {
+  const isRatingPost = method === 'POST' && /^\/api\/items\/\d+\/rating$/.test(url.pathname)
+  if (method === 'POST' && (publicPosts.includes(url.pathname) || isRatingPost)) {
     return context.next()
   }
 

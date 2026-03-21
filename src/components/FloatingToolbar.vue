@@ -17,7 +17,7 @@ const showMoveMenu = ref(false)
 const moveMenuRef = ref<HTMLElement | null>(null)
 
 const moveTargets = computed(() =>
-  ui.categoryOptions.filter(opt => opt.key !== ui.activeTab)
+  ui.categories.filter(opt => opt.key !== ui.activeTab)
 )
 
 async function handleRename() {

@@ -5,30 +5,19 @@ import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useItemsStore } from '@/stores/items'
 import { api, ApiRequestError } from '@/lib/api'
+import { SETTINGS_BASE_ITEMS, SETTINGS_ADMIN_ITEMS } from '@/lib/menuItems'
 import type { IconInfo } from '@/types'
 import ReviewPanel from '@/components/ReviewPanel.vue'
+import MenuIcon from '@/components/MenuIcon.vue'
 
 const ui = useUiStore()
 const auth = useAuthStore()
 const itemsStore = useItemsStore()
 
-const baseSidebarItems = [
-  { key: 'account', label: '我的账号', icon: 'user' },
-  { key: 'personalize', label: '个性化设置', icon: 'palette' },
-  { key: 'groups', label: '分组管理', icon: 'folder' },
-  { key: 'icons', label: '图标管理', icon: 'image' },
-]
-
-const adminSidebarItems = [
-  { key: 'data', label: '数据管理', icon: 'database' },
-  { key: 'review', label: '审核管理', icon: 'inbox' },
-]
-
-const sidebarItems = computed(() =>
-  auth.isLoggedIn
-    ? [...baseSidebarItems, ...adminSidebarItems]
-    : baseSidebarItems
-)
+const sidebarItems = computed(() => {
+  if (auth.isLoggedIn) return [...SETTINGS_BASE_ITEMS, ...SETTINGS_ADMIN_ITEMS]
+  return SETTINGS_BASE_ITEMS.filter(item => item.visitor)
+})
 
 const activeTab = computed(() => ui.settingsTab)
 
@@ -290,39 +279,7 @@ watch(activeTab, (tab) => {
             :class="activeTab === item.key && 'sidebar-item-active'"
             @click="switchTab(item.key)"
           >
-            <!-- user -->
-            <svg v-if="item.icon === 'user'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
-            <!-- palette -->
-            <svg v-else-if="item.icon === 'palette'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
-              <circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/>
-              <circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/>
-              <circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/>
-              <circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/>
-              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
-            </svg>
-            <!-- folder -->
-            <svg v-else-if="item.icon === 'folder'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            <!-- image -->
-            <svg v-else-if="item.icon === 'image'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <!-- inbox -->
-            <svg v-else-if="item.icon === 'inbox'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
-              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-            </svg>
-            <!-- database -->
-            <svg v-else-if="item.icon === 'database'" class="w-4 h-4 icon-stroke shrink-0" viewBox="0 0 24 24" fill="none">
-              <ellipse cx="12" cy="5" rx="9" ry="3"/>
-              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-            </svg>
+            <MenuIcon :name="item.icon" />
             <span>{{ item.label }}</span>
           </button>
         </nav>
@@ -341,28 +298,81 @@ watch(activeTab, (tab) => {
         <div v-if="activeTab === 'account'" class="py-7 px-8">
           <h2 class="text-lg font-semibold m-0 mb-6 text-text">我的账号</h2>
 
-          <div class="mb-6">
-            <h4 class="text-[13px] font-semibold m-0 text-link">登录状态</h4>
-            <div class="flex items-center gap-3 mt-2">
-              <span
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                :class="auth.isLoggedIn ? 'bg-green-500/15 text-green-500' : 'bg-red-500/15 text-red-500'"
-              >
-                <span class="w-1.5 h-1.5 rounded-full" :class="auth.isLoggedIn ? 'bg-green-500' : 'bg-red-500'"></span>
-                {{ auth.isLoggedIn ? '已登录' : '未登录' }}
-              </span>
+          <!-- Visitor (Linux DO) -->
+          <template v-if="auth.isVisitorLoggedIn && auth.visitorInfo">
+            <div class="flex items-center gap-4 mb-6 p-4 rounded-xl bg-search">
+              <img
+                v-if="auth.visitorInfo.linuxdo_avatar"
+                :src="auth.visitorInfo.linuxdo_avatar"
+                alt="头像"
+                class="w-14 h-14 rounded-full object-cover shrink-0"
+              />
+              <div v-else class="w-14 h-14 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xl font-semibold shrink-0">
+                {{ (auth.visitorInfo.linuxdo_name || auth.visitorInfo.linuxdo_username).charAt(0) }}
+              </div>
+              <div class="min-w-0">
+                <div class="text-base font-semibold text-text truncate">{{ auth.visitorInfo.linuxdo_name || auth.visitorInfo.linuxdo_username }}</div>
+                <div class="text-sm text-note">@{{ auth.visitorInfo.linuxdo_username }}</div>
+                <div class="text-xs text-note mt-1">信任等级：{{ auth.visitorInfo.trust_level }}</div>
+              </div>
             </div>
-          </div>
 
-          <div v-if="auth.isLoggedIn" class="mb-6">
-            <h4 class="text-[13px] font-semibold m-0 text-link">操作</h4>
-            <button
-              class="mt-2 px-4 py-2 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent cursor-pointer hover:bg-red-500/10 transition-colors"
-              @click="auth.logout(); close()"
-            >
-              退出登录
-            </button>
-          </div>
+            <div class="mb-6">
+              <h4 class="text-[13px] font-semibold m-0 text-link">登录状态</h4>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-500">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  已登录（Linux DO）
+                </span>
+              </div>
+            </div>
+
+            <div class="mb-6">
+              <h4 class="text-[13px] font-semibold m-0 text-link">操作</h4>
+              <button
+                class="mt-2 px-4 py-2 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent cursor-pointer hover:bg-red-500/10 transition-colors"
+                @click="auth.visitorLogout(); close()"
+              >
+                退出登录
+              </button>
+            </div>
+          </template>
+
+          <!-- Admin -->
+          <template v-else-if="auth.isLoggedIn">
+            <div class="mb-6">
+              <h4 class="text-[13px] font-semibold m-0 text-link">登录状态</h4>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-500">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  已登录（管理员）
+                </span>
+              </div>
+            </div>
+
+            <div class="mb-6">
+              <h4 class="text-[13px] font-semibold m-0 text-link">操作</h4>
+              <button
+                class="mt-2 px-4 py-2 text-sm font-medium rounded-lg border border-danger text-danger bg-transparent cursor-pointer hover:bg-red-500/10 transition-colors"
+                @click="auth.logout(); close()"
+              >
+                退出登录
+              </button>
+            </div>
+          </template>
+
+          <!-- Not logged in -->
+          <template v-else>
+            <div class="mb-6">
+              <h4 class="text-[13px] font-semibold m-0 text-link">登录状态</h4>
+              <div class="flex items-center gap-3 mt-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-500/15 text-red-500">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  未登录
+                </span>
+              </div>
+            </div>
+          </template>
         </div>
 
         <!-- Personalization -->

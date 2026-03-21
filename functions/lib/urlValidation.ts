@@ -30,6 +30,16 @@ function isPrivateIP(hostname: string): boolean {
  * Validate that a URL is safe to fetch (no SSRF).
  * Throws an error with a descriptive message if the URL is unsafe.
  */
+/** 检查 URL 是否为有效的 http/https 链接 */
+export function isValidHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export function assertSafeUrl(url: string): void {
   let parsed: URL
   try {

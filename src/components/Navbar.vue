@@ -22,7 +22,7 @@ function onGlobalFocus() {
 }
 
 function onAccountClick() {
-  if (auth.isLoggedIn) {
+  if (auth.isLoggedIn || auth.isVisitorLoggedIn) {
     accountDropdownOpen.value = !accountDropdownOpen.value
   } else {
     ui.showLoginModal = true
@@ -71,8 +71,8 @@ function onAccountClick() {
       <div class="relative">
         <button
           type="button"
-          :aria-label="auth.isLoggedIn ? '账号菜单' : '登录'"
-          :title="auth.isLoggedIn ? '账号菜单' : '登录'"
+          :aria-label="auth.isLoggedIn ? '账号菜单' : (auth.isVisitorLoggedIn ? '已登录 Linux DO' : '登录')"
+          :title="auth.isLoggedIn ? '账号菜单' : (auth.isVisitorLoggedIn ? `已登录：${auth.visitorInfo?.linuxdo_name || auth.visitorInfo?.linuxdo_username}` : '登录')"
           class="flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer transition-[background-color] duration-150 bg-transparent hover:bg-search"
           @click="onAccountClick"
         >
@@ -83,7 +83,7 @@ function onAccountClick() {
             <polyline points="16 11 18 13 22 9"/>
           </svg>
           <!-- Logged-out: user icon -->
-          <svg v-else class="w-[18px] h-[18px] icon-stroke text-note" viewBox="0 0 24 24" fill="none">
+          <svg v-else class="w-[18px] h-[18px] icon-stroke" :class="auth.isVisitorLoggedIn ? 'text-primary' : 'text-note'" viewBox="0 0 24 24" fill="none">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>

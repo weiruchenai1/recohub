@@ -1,12 +1,7 @@
+import { json } from '../../../lib/response'
+
 interface Env {
   DB: D1Database
-}
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
 }
 
 // DELETE /api/submissions/:id — reject (delete) a submission

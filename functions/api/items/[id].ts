@@ -1,3 +1,5 @@
+import { isValidHttpUrl } from '../../lib/urlValidation'
+
 interface Env {
   DB: D1Database
 }
@@ -24,16 +26,11 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     })
   }
 
-  if (body.url !== undefined) {
-    try {
-      const parsed = new URL(body.url)
-      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error()
-    } catch {
-      return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
+  if (body.url !== undefined && !isValidHttpUrl(body.url)) {
+    return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   await context.env.DB.prepare(

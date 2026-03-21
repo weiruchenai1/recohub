@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, computed, toRef } from 'vue'
+import { watch, computed, toRef, onMounted, ref } from 'vue'
 import Navbar from '@/components/Navbar.vue'
 import TabBar from '@/components/TabBar.vue'
 import Toolbar from '@/components/Toolbar.vue'
@@ -21,6 +21,27 @@ const ui = useUiStore()
 const items = useItemsStore()
 const auth = useAuthStore()
 const submissionsStore = useSubmissionsStore()
+
+const oauthMessage = ref('')
+
+// Handle OAuth callback parameters
+onMounted(() => {
+  const params = new URLSearchParams(window.location.search)
+  const oauthToken = params.get('oauth_token')
+  const oauthError = params.get('oauth_error')
+
+  if (oauthToken) {
+    auth.loginWithOAuthToken(oauthToken)
+    oauthMessage.value = `欢迎，${auth.visitorInfo?.linuxdo_name || auth.visitorInfo?.linuxdo_username || 'Linux DO 用户'}`
+  } else if (oauthError) {
+    oauthMessage.value = oauthError
+  }
+
+  if (oauthMessage.value) {
+    setTimeout(() => { oauthMessage.value = '' }, oauthToken ? 3000 : 5000)
+    window.history.replaceState({}, '', window.location.pathname)
+  }
+})
 
 // Load categories from backend on startup
 ui.fetchCategories()
@@ -94,4 +115,14 @@ watch(() => ui.page, () => {
   <LoginModal v-if="ui.showLoginModal" @close="ui.showLoginModal = false" />
   <ConfirmDialog v-if="ui.showConfirmDialog" />
   <SettingsModal v-if="ui.showSettingsModal" />
+
+  <!-- OAuth toast -->
+  <Transition name="toast">
+    <div
+      v-if="oauthMessage"
+      class="fixed top-20 left-1/2 -translate-x-1/2 z-[3000] px-5 py-3 rounded-xl text-sm font-medium shadow-lg bg-row border border-border text-text"
+    >
+      {{ oauthMessage }}
+    </div>
+  </Transition>
 </template>

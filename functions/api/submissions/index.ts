@@ -1,33 +1,19 @@
+import { json } from '../../lib/response'
+import { requireAuth } from '../../lib/auth'
+import { isValidHttpUrl } from '../../lib/urlValidation'
+
 interface Env {
   DB: D1Database
   JWT_SECRET: string
 }
 
-// GET /api/submissions — list pending submissions (auth required, checked by middleware for GET? No, GET is public in middleware)
-// We need manual JWT check for GET here since middleware allows all GETs
+// GET /api/submissions — list pending submissions (admin-only, middleware allows all GETs so need manual check)
 // POST /api/submissions — public submit
-
-import { jwtVerify } from 'jose'
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  })
-}
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   // Manual auth check — submissions list is admin-only
-  const authHeader = context.request.headers.get('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return json({ error: 'Unauthorized' }, 401)
-  }
-  try {
-    const secret = new TextEncoder().encode(context.env.JWT_SECRET)
-    await jwtVerify(authHeader.slice(7), secret)
-  } catch {
-    return json({ error: 'Unauthorized' }, 401)
-  }
+  const denied = await requireAuth(context.request, context.env.JWT_SECRET)
+  if (denied) return denied
 
   const rows = await context.env.DB.prepare(
     'SELECT * FROM submissions ORDER BY created_at DESC'
@@ -62,13 +48,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // URL protocol check
-  try {
-    const parsed = new URL(url)
-    if (!['http:', 'https:'].includes(parsed.protocol)) {
-      return json({ error: 'URL 仅支持 http/https 协议' }, 400)
-    }
-  } catch {
-    return json({ error: 'URL 格式无效' }, 400)
+  if (!isValidHttpUrl(url)) {
+    return json({ error: 'URL 仅支持 http/https 协议' }, 400)
   }
 
   // Check if URL already exists in items

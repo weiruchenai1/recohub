@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { api } from '@/lib/api'
 import type { Category, CategoryOption, ViewLayout } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/types'
@@ -38,8 +38,6 @@ export const useUiStore = defineStore('ui', () => {
   // Dynamic categories — loaded from backend, fallback to defaults
   const categories = ref<CategoryOption[]>(DEFAULT_CATEGORIES)
   const categoriesLoaded = ref(false)
-
-  const categoryOptions = computed(() => categories.value)
 
   async function fetchCategories() {
     try {
@@ -169,7 +167,7 @@ export const useUiStore = defineStore('ui', () => {
     showConfirmDialog, confirmTitle, confirmMessage, confirmButtonText, confirmVariant,
     showSettingsModal, settingsTab,
     logoVisible, logoText,
-    categories, categoryOptions, categoriesLoaded,
+    categories, categoriesLoaded,
     fetchCategories, addCategory, removeCategory, updateCategory, syncCategories,
     openSettings,
     confirm, resolveConfirm, cancelConfirm,

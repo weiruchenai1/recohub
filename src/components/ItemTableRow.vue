@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import CustomCheckbox from '@/components/CustomCheckbox.vue'
+import StarRating from '@/components/StarRating.vue'
 import { useItemsStore } from '@/stores/items'
 import { useUiStore } from '@/stores/ui'
+import { displayUrl } from '@/lib/utils'
 import type { Item } from '@/types'
 
 const props = defineProps<{
@@ -11,9 +13,6 @@ const props = defineProps<{
 
 const items = useItemsStore()
 const ui = useUiStore()
-function displayUrl(url: string): string {
-  try { return new URL(url).hostname } catch { return url }
-}
 
 const isChecked = () => items.selectedIds.has(props.item.id)
 </script>
@@ -37,7 +36,10 @@ const isChecked = () => items.selectedIds.has(props.item.id)
       />
     </td>
     <td class="px-4 py-3 border-b border-border">
-      <strong>{{ item.name }}</strong>
+      <div class="flex items-center gap-2">
+        <strong>{{ item.name }}</strong>
+        <StarRating :item-id="item.id" />
+      </div>
     </td>
     <td class="px-4 py-3 border-b border-border">
       <a

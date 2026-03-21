@@ -82,11 +82,16 @@ input, select, button, textarea {
   stroke-linejoin: round;
 }
 
-.row-checked td {
-  opacity: 0.45;
-  text-decoration: line-through;
-}
-
 @media (max-width: 768px) {
   body { padding: 0; padding-top: 72px; }
+}
+
+.toast-enter-active {
+  transition: opacity 0.2s;
+}
+.toast-leave-active {
+  transition: opacity 1.5s ease-out;
+}
+.toast-enter-from, .toast-leave-to {
+  opacity: 0;
 }
