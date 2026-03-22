@@ -77,9 +77,6 @@ function handleClose() {
         <h3 class="text-[17px] font-semibold text-text">
           登录
         </h3>
-        <span v-if="error" class="text-sm text-danger">
-          {{ error }}
-        </span>
       </div>
 
       <!-- Linux DO 访客登录（管理员专属操作触发时隐藏） -->
@@ -119,7 +116,12 @@ function handleClose() {
       </template>
 
       <!-- 管理员密码登录 -->
-      <p class="text-[13px] text-note mb-2.5">管理员登录</p>
+      <div class="flex items-center gap-3 mb-2.5">
+        <p class="text-[13px] text-note">管理员登录</p>
+        <span v-if="error" class="text-sm text-danger">
+          {{ error }}
+        </span>
+      </div>
       <div class="mb-3.5">
         <input
           v-model="password"
