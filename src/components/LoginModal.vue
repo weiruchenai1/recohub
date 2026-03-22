@@ -73,9 +73,14 @@ function handleClose() {
     @click.self="handleClose"
   >
     <div class="w-[420px] max-w-[92vw] rounded-2xl p-7 border-none bg-row">
-      <h3 class="m-0 mb-5 text-[17px] font-semibold text-text">
-        登录
-      </h3>
+      <div class="flex items-center gap-3 m-0 mb-5">
+        <h3 class="text-[17px] font-semibold text-text">
+          登录
+        </h3>
+        <span v-if="error" class="text-sm text-danger">
+          {{ error }}
+        </span>
+      </div>
 
       <!-- Linux DO 访客登录（管理员专属操作触发时隐藏） -->
       <template v-if="!adminOnly">
@@ -115,18 +120,15 @@ function handleClose() {
 
       <!-- 管理员密码登录 -->
       <p class="text-[13px] text-note mb-2.5">管理员登录</p>
-      <div class="flex items-center gap-3 mb-3.5">
+      <div class="mb-3.5">
         <input
           v-model="password"
           type="password"
           autofocus
           placeholder="请输入管理密码"
-          class="flex-1 py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
+          class="w-full py-[9px] px-3 text-sm border-none rounded-lg outline-none transition-[box-shadow] duration-150 text-text bg-search"
           @keydown.enter="handleLogin"
         />
-        <span v-if="error" class="text-sm text-danger whitespace-nowrap shrink-0">
-          {{ error }}
-        </span>
       </div>
 
       <div class="flex justify-end gap-2 mt-[22px]">
