@@ -259,47 +259,60 @@ npm run build && npx wrangler pages dev dist
 
 ## 部署到 Cloudflare Pages
 
-### 方式一：Fork 部署（推荐）
+### 方式一：Git 部署（推荐）
 
 无需安装任何工具，全程在浏览器中完成。
 
-**1. Fork 并创建项目**
+**1. Fork 并创建 Pages 项目**
 
 - Fork 本仓库到自己的 GitHub 账号
-- 进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers 和 Pages** → **创建应用程序** → **Continue with GitHub**
-- 选择 Fork 的仓库 → **下一步**
+- 进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers 和 Pages** → **创建**
+- 页面默认显示的是"创建 Worker"，滚动到底部点击 **「想要部署 Pages？开始使用」**
+- 选择 **导入现有 Git 存储库** → **开始使用**
+- 选择 GitHub 账号，选择 Fork 的仓库 → **开始设置**
+
+**2. 设置构建和部署**
+
+- 项目名称保持默认（`recohub`）
+- 生产分支选择 `main`
 - 构建命令填 `npm run build`
-- 展开 **高级设置**，在底部的环境变量区域添加（点击 **+ 添加变量** 增加第二条，均勾选 **加密**）：
+- 构建输出目录填 `dist`
 
-| 变量名称 | 变量值 |
-|----------|--------|
-| `AUTH_PASSWORD` | 自定义管理员登录密码 |
-| `JWT_SECRET` | 随机字符串（建议 32 位以上） |
-| `LINUXDO_CLIENT_ID` | Linux DO OAuth 客户端 ID（可选，启用访客登录） |
-| `LINUXDO_CLIENT_SECRET` | Linux DO OAuth 客户端密钥（可选，启用访客登录） |
+- 点击 **保存并部署**
 
-- 点击 **部署**
+> 首次部署会失败（因为还没绑定 D1 和 R2），这是正常的，继续下面的步骤。
 
-**2. 创建 D1 数据库并绑定**
+**3. 创建 D1 数据库**
 
 - 进入 Dashboard 左侧 **存储和数据库** → **D1 SQL 数据库** → **+ 创建数据库**
 - 名称填 `recohub-db`，数据位置保持默认，点击 **创建**
 
-**3. 创建 R2 存储桶并绑定**
+**4. 创建 R2 存储桶**
 
 - 进入 Dashboard 左侧 **存储和数据库** → **R2 对象存储** → **+ 创建存储桶**
 - 名称填 `recohub-icons`，点击 **创建存储桶**
 
-**4. 绑定资源**
+**5. 绑定资源**
 
-- 返回项目页面 → **设置** → **绑定** → **添加**：
+- 返回 **Workers 和 Pages** → 点击 `recohub` 项目 → **设置** → **绑定** → **添加**：
 
 | 类型 | 名称 | 值 |
 |------|------|-----|
 | D1 数据库 | `DB` | `recohub-db` |
 | R2 存储桶 | `ICONS` | `recohub-icons` |
 
-**5. 重新部署**
+**6. 变量和机密**
+
+- 点击 **+ 添加** 添加以下变量：
+
+| 名称 | 值 |
+|----------|--------|
+| `AUTH_PASSWORD` | 自定义管理员登录密码 |
+| `JWT_SECRET` | 随机字符串（建议 32 位以上） |
+| `LINUXDO_CLIENT_ID` | Linux DO OAuth 客户端 ID（可选，启用访客登录） |
+| `LINUXDO_CLIENT_SECRET` | Linux DO OAuth 客户端密钥（可选，启用访客登录） |
+
+**7. 重新部署**
 
 进入 **部署** → 找到最新的部署 → **重试部署**。
 
@@ -333,7 +346,7 @@ npx wrangler pages deploy dist
 
 **3. 配置密钥与绑定**
 
-进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → 项目页面 → **设置**，按方式一的第 4 步配置变量和绑定（D1 + R2）。
+进入 [Cloudflare Dashboard](https://dash.cloudflare.com/) → 项目页面 → **设置**，按方式一配置变量和绑定（D1 + R2）。
 
 **4. 重新部署生效**
 

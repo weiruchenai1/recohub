@@ -18,6 +18,7 @@ export const useUiStore = defineStore('ui', () => {
   const perPage = ref(parseInt(localStorage.getItem('perPage') || '20'))
 
   const showLoginModal = ref(false)
+  const loginAdminOnly = ref(false)
   const showItemModal = ref(false)
   const pendingAction = ref<(() => void) | null>(null)
 
@@ -136,12 +137,14 @@ export const useUiStore = defineStore('ui', () => {
       action()
     } else {
       pendingAction.value = action
+      loginAdminOnly.value = true
       showLoginModal.value = true
     }
   }
 
   function onLoginSuccess() {
     showLoginModal.value = false
+    loginAdminOnly.value = false
     if (pendingAction.value) {
       pendingAction.value()
       pendingAction.value = null
@@ -163,7 +166,7 @@ export const useUiStore = defineStore('ui', () => {
   return {
     theme, layout, activeTab, checklistEnabled,
     globalSearch, localSearch, page, perPage,
-    showLoginModal, showItemModal, pendingAction,
+    showLoginModal, loginAdminOnly, showItemModal, pendingAction,
     showConfirmDialog, confirmTitle, confirmMessage, confirmButtonText, confirmVariant,
     showSettingsModal, settingsTab,
     logoVisible, logoText,

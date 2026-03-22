@@ -112,7 +112,7 @@ watch(() => ui.page, () => {
 
   <FloatingToolbar @refresh="loadItems" />
   <ItemModal v-if="ui.showItemModal" @close="ui.showItemModal = false" @saved="loadItems" />
-  <LoginModal v-if="ui.showLoginModal" @close="ui.showLoginModal = false" />
+  <LoginModal v-if="ui.showLoginModal" @close="ui.showLoginModal = false; ui.loginAdminOnly = false" />
   <ConfirmDialog v-if="ui.showConfirmDialog" />
   <SettingsModal v-if="ui.showSettingsModal" />
 
