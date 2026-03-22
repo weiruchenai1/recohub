@@ -67,6 +67,28 @@
 **索引**：
 - `idx_submissions_created` — created_at 列
 
+### `ratings`
+
+存储访客（通过 Linux DO OAuth 登录）对条目的评分。
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | 自增主键 |
+| item_id | INTEGER NOT NULL | 关联条目 ID，外键引用 `items(id)`，级联删除 |
+| linuxdo_id | INTEGER NOT NULL | Linux DO 用户 ID |
+| linuxdo_username | TEXT NOT NULL DEFAULT '' | Linux DO 用户名 |
+| score | INTEGER NOT NULL | 评分（1-5），CHECK 约束 |
+| created_at | TEXT DEFAULT (datetime('now')) | 创建时间 |
+| updated_at | TEXT DEFAULT (datetime('now')) | 更新时间 |
+
+**约束**：`UNIQUE(item_id, linuxdo_id)` — 每个用户对每个条目只能评一次分（重复提交为更新）
+
+**外键**：`FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE`
+
+**索引**：
+- `idx_ratings_item_id` — item_id 列
+- `idx_ratings_linuxdo_id` — linuxdo_id 列
+
 ## 数据库初始化机制
 
 `db/migrate.sql` 和 `db/seed.sql` 是数据库结构与种子数据的**唯一事实来源**。

@@ -36,3 +36,18 @@ CREATE TABLE IF NOT EXISTS submissions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_submissions_created ON submissions(created_at);
+
+CREATE TABLE IF NOT EXISTS ratings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL,
+    linuxdo_id INTEGER NOT NULL,
+    linuxdo_username TEXT NOT NULL DEFAULT '',
+    score INTEGER NOT NULL CHECK(score >= 1 AND score <= 5),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE,
+    UNIQUE(item_id, linuxdo_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ratings_item_id ON ratings(item_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_linuxdo_id ON ratings(linuxdo_id);

@@ -1,15 +1,10 @@
--- RecoHub complete idempotent schema migration
--- Run via: npx wrangler d1 execute recohub-db --file=db/migrate.sql
--- Or for local: npx wrangler d1 execute recohub-db --local --file=db/migrate.sql
---
--- This script is safe to run multiple times (idempotent).
--- It creates all tables if they don't exist and ensures schema is at version 6.
+-- RecoHub 完整幂等 Schema 迁移脚本
 
--- Schema version tracking
+-- Schema 版本追踪
 CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER NOT NULL);
 INSERT INTO _schema_version (version) SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM _schema_version);
 
--- Categories
+-- 分类
 CREATE TABLE IF NOT EXISTS categories (
     key TEXT PRIMARY KEY,
     label TEXT NOT NULL,
@@ -18,7 +13,7 @@ CREATE TABLE IF NOT EXISTS categories (
 INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES ('software', '软件推荐', 0);
 INSERT OR IGNORE INTO categories (key, label, sort_order) VALUES ('website', '网站推荐', 1);
 
--- Items
+-- 推荐条目
 CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     category TEXT NOT NULL,
@@ -34,7 +29,7 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
 CREATE INDEX IF NOT EXISTS idx_items_sort_order ON items(sort_order);
 
--- Submissions
+-- 访客投稿
 CREATE TABLE IF NOT EXISTS submissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -47,7 +42,7 @@ CREATE TABLE IF NOT EXISTS submissions (
 );
 CREATE INDEX IF NOT EXISTS idx_submissions_created ON submissions(created_at);
 
--- Ratings (visitor ratings via Linux DO OAuth)
+-- 评分（通过 Linux DO OAuth 登录的访客评分）
 CREATE TABLE IF NOT EXISTS ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id INTEGER NOT NULL,
@@ -62,5 +57,5 @@ CREATE TABLE IF NOT EXISTS ratings (
 CREATE INDEX IF NOT EXISTS idx_ratings_item_id ON ratings(item_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_linuxdo_id ON ratings(linuxdo_id);
 
--- Mark schema as version 7
+-- 设置 schema 版本为 7
 UPDATE _schema_version SET version = 7;

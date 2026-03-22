@@ -24,6 +24,10 @@
 - 图标 Key 格式: `{domain}.{ext}`，由 `functions/lib/autoIcon.ts` 的 `getIconKey()` 生成
 - 同分类同 URL 不可重复 (`UNIQUE(category, url)`)
 - 所有服务端 fetch 需经过 SSRF 校验 (`functions/lib/urlValidation.ts`)
+- **文档同步**：新增功能或任何功能性改动后，必须同步更新以下文档：
+  - `README.md`
+  - `db/README.md`
+  - `db/R2.md`
 
 ## 开发命令
 

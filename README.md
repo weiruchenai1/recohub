@@ -36,9 +36,11 @@ recohub/
 │   │   ├── ItemGrid.vue          # 网格视图容器
 │   │   ├── ItemGridCard.vue      # 网格卡片组件
 │   │   ├── ItemModal.vue         # 新增/编辑/投稿弹窗（含图标获取与上传，访客投稿模式）
-│   │   ├── LoginModal.vue        # 登录弹窗
+│   │   ├── LoginModal.vue        # 登录弹窗（密码登录 + Linux DO OAuth 登录）
 │   │   ├── SettingsModal.vue     # 系统设置弹窗（账号、个性化、分组管理、图标管理、数据管理、审核管理）
 │   │   ├── ReviewPanel.vue       # 审核管理面板（查看/通过/驳回访客投稿）
+│   │   ├── StarRating.vue        # 星级评分组件（1-5 星，支持访客通过 Linux DO OAuth 评分）
+│   │   ├── MenuIcon.vue          # 菜单图标组件（SVG 图标统一渲染）
 │   │   ├── SearchDropdown.vue    # 搜索下拉结果
 │   │   ├── PaginationBar.vue     # 分页控件
 │   │   ├── FloatingToolbar.vue   # 浮动批量操作栏
@@ -51,10 +53,11 @@ recohub/
 │   │   ├── items.ts              # 数据状态（列表增删改查）
 │   │   └── submissions.ts        # 投稿状态（待审核列表、审核/驳回、访客提交）
 │   ├── composables/              # 组合式函数
-│   │   ├── useFavicon.ts         # Favicon 展示（使用服务端存储的图标）
 │   │   └── useDebounce.ts        # 防抖
 │   ├── lib/                      # 工具库
-│   │   └── api.ts                # API 客户端封装
+│   │   ├── api.ts                # API 客户端封装
+│   │   ├── menuItems.ts          # 集中管理菜单项配置（AccountDropdown / SettingsModal 共享）
+│   │   └── utils.ts              # 通用工具函数（URL 显示等）
 │   ├── types/                    # TypeScript 类型定义
 │   │   └── index.ts              # 全局类型（Item、Submission 等）
 │   ├── App.vue                   # 根组件
@@ -65,6 +68,8 @@ recohub/
 │   ├── lib/                      # 后端公共库
 │   │   ├── autoIcon.ts           # 自动抓取网站 Favicon 并存入 R2（含 Key 生成规则、图标发现逻辑，共享给 icons API 调用）
 │   │   ├── dbSchema.ts           # [自动生成] 由 db/*.sql 构建时嵌入的 SQL 常量
+│   │   ├── auth.ts               # 手动 JWT 校验辅助函数
+│   │   ├── response.ts           # JSON 响应辅助函数
 │   │   └── urlValidation.ts      # SSRF 防护（URL 校验，阻止私有 IP / localhost / 非 http(s) 协议）
 │   └── api/
 │       ├── _middleware.ts        # JWT 认证中间件 + 数据库守卫（空库自动初始化，SQL 来自 dbSchema.ts）
@@ -83,8 +88,13 @@ recohub/
 │       ├── items/
 │       │   ├── index.ts          # 列表查询 / 新增（自动获取图标）
 │       │   ├── [id].ts           # 单条编辑 / 删除
+│       │   ├── [id]/
+│       │   │   └── rating.ts     # 条目评分（查询/提交，需访客 JWT）
 │       │   ├── batch.ts          # 批量操作（删除/移动）
 │       │   └── fetch-icons.ts    # 批量获取缺失图标（流式 NDJSON，5 并发）
+│       ├── oauth/
+│       │   ├── config.ts         # OAuth 公开配置（返回是否启用 Linux DO 登录）
+│       │   └── linuxdo.ts        # Linux DO OAuth 回调（换取令牌、获取用户信息、签发访客 JWT）
 │       └── submissions/
 │           ├── index.ts          # 投稿列表查询 / 访客提交（含防刷限制）
 │           ├── count.ts          # 待审核数量
@@ -119,7 +129,8 @@ recohub/
 - [x] **分页功能** - 可配置每页条数（10/20/50/100），空页自动回退
 - [x] **多选与批量操作** - 复选框选择、全选/取消、批量删除、批量移动分类
 - [x] **浮动操作栏** - 选中条目后显示浮动工具栏，支持编辑/移动/删除/取消
-- [x] **用户认证** - 密码登录，JWT Token 鉴权（7天有效期）
+- [x] **用户认证** - 密码登录，JWT Token 鉴权（7天有效期）；支持 Linux DO OAuth 访客登录
+- [x] **访客系统** - 通过 Linux DO OAuth 登录的访客，可进行评分等互动操作；Navbar 和 SettingsModal 区分管理员和访客状态
 - [x] **明暗主题** - 亮色/暗色主题切换，跟随系统偏好，持久化存储
 - [x] **Favicon 展示** - 服务端自动抓取网站图标并存入 R2，加载失败显示首字母占位图标
 - [x] **自动获取图标** - 新增条目时服务端自动抓取 Favicon（解析 HTML link 标签 + /favicon.ico + Google S2 降级），存入 R2 永久缓存，图标以域名命名自动去重
@@ -137,15 +148,15 @@ recohub/
 - [x] **URL 校验** - 后端 API 新增/编辑时校验 URL 格式，仅允许 http/https 协议
 - [x] **后端 API** - 完整的 RESTful API，含认证中间件
 - [x] **数据库设计** - D1 数据库表结构、索引与唯一约束（防重复插入），SQL 文件为唯一事实来源，构建时自动嵌入 middleware，首次访问自动建表
+- [x] **数据导入/导出** - 系统设置中的数据管理标签页，支持导出全部数据为 JSON，支持合并导入和覆盖导入两种模式；导入时自动忽略图标路径避免产生无效引用
+- [x] **批量获取图标** - 图标管理中一键为所有缺失图标的条目自动获取网站图标，5 并发加速，流式进度条实时显示
+- [x] **评分功能** - 访客（Linux DO OAuth 登录）可对条目进行 1-5 星评分，显示平均分和评分人数
 
 ### 待完成/可扩展
 
 - [ ] 国际化（i18n）支持
-- [x] **数据导入/导出** - 系统设置中的数据管理标签页，支持导出全部数据为 JSON，支持合并导入和覆盖导入两种模式；导入时自动忽略图标路径避免产生无效引用
-- [x] **批量获取图标** - 图标管理中一键为所有缺失图标的条目自动获取网站图标，5 并发加速，流式进度条实时显示
 - [ ] 用户注册与多用户支持
 - [ ] 标签系统
-- [ ] 评分/评论功能
 
 ## API 接口
 
@@ -162,6 +173,10 @@ recohub/
 | `DELETE` | `/api/items/:id` | 删除条目 | 是 |
 | `POST` | `/api/items/batch` | 批量操作（删除/移动） | 是 |
 | `POST` | `/api/items/fetch-icons` | 批量获取缺失图标（流式 NDJSON 响应，5 并发） | 是 |
+| `GET` | `/api/items/:id/rating` | 获取条目评分（平均分、评分数、当前用户评分） | 否 |
+| `POST` | `/api/items/:id/rating` | 提交/更新评分（1-5 分，需访客 JWT） | 访客 |
+| `GET` | `/api/oauth/config` | 获取 OAuth 公开配置（是否启用 Linux DO 登录） | 否 |
+| `GET` | `/api/oauth/linuxdo` | Linux DO OAuth 回调（换取令牌并签发访客 JWT） | 否 |
 | `GET` | `/api/icons` | 获取所有已上传图标列表 | 否 |
 | `POST` | `/api/icons` | 上传本地图标文件到 R2（FormData） | 是 |
 | `GET` | `/api/icons/:key` | 访问图标文件（强缓存，immutable） | 否 |
@@ -225,6 +240,9 @@ npm run dev
 > ```
 > AUTH_PASSWORD=你的密码
 > JWT_SECRET=你的密钥
+> LINUXDO_CLIENT_ID=你的 Linux DO OAuth 客户端 ID（可选）
+> LINUXDO_CLIENT_SECRET=你的 Linux DO OAuth 客户端密钥（可选）
+> SITE_URL=http://localhost:5173（可选，开发环境 OAuth 回调需要）
 > ```
 
 ### 构建生产版本
@@ -257,6 +275,8 @@ npm run build && npx wrangler pages dev dist
 |----------|--------|
 | `AUTH_PASSWORD` | 自定义管理员登录密码 |
 | `JWT_SECRET` | 随机字符串（建议 32 位以上） |
+| `LINUXDO_CLIENT_ID` | Linux DO OAuth 客户端 ID（可选，启用访客登录） |
+| `LINUXDO_CLIENT_SECRET` | Linux DO OAuth 客户端密钥（可选，启用访客登录） |
 
 - 点击 **部署**
 
