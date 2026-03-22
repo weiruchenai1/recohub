@@ -118,7 +118,7 @@ function handleClose() {
       <!-- 管理员密码登录 -->
       <div class="flex items-center gap-3 mb-2.5">
         <p class="text-[13px] text-note">管理员登录</p>
-        <span v-if="error" class="text-sm text-danger">
+        <span v-if="error" class="text-xs text-danger">
           {{ error }}
         </span>
       </div>
