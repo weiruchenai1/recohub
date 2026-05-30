@@ -1,6 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { getIconKey } from '../../lib/autoIcon'
+import { json } from '../../lib/response'
 
 interface Env {
   DB: D1Database
@@ -29,18 +30,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     url: `/api/icons/${encodeURIComponent(obj.key)}`,
   }))
 
-  return new Response(JSON.stringify(icons), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json(icons)
 }
 
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
   const list = await context.env.ICONS.list()
 
   if (list.objects.length === 0) {
-    return new Response(JSON.stringify({ success: true, deleted: 0 }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ success: true, deleted: 0 })
   }
 
   // Delete all icon objects from R2
@@ -51,9 +48,7 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
     "UPDATE items SET icon_url = NULL, updated_at = datetime('now') WHERE icon_url IS NOT NULL"
   ).run()
 
-  return new Response(JSON.stringify({ success: true, deleted: list.objects.length }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json({ success: true, deleted: list.objects.length })
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -61,24 +56,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const file = formData.get('file') as File | null
 
   if (!file) {
-    return new Response(JSON.stringify({ error: '未选择文件' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: '未选择文件' }, 400)
   }
 
   if (!ALLOWED_TYPES.has(file.type)) {
-    return new Response(JSON.stringify({ error: '不支持的文件类型，仅支持 PNG/JPEG/GIF/SVG/ICO/WebP' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: '不支持的文件类型，仅支持 PNG/JPEG/GIF/SVG/ICO/WebP' }, 400)
   }
 
   if (file.size > MAX_SIZE) {
-    return new Response(JSON.stringify({ error: '文件大小不能超过 512KB' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: '文件大小不能超过 512KB' }, 400)
   }
 
   const siteUrl = formData.get('siteUrl') as string | null
@@ -90,12 +76,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     httpMetadata: { contentType: file.type },
   })
 
-  return new Response(JSON.stringify({
-    key,
-    url: `/api/icons/${encodeURIComponent(key)}`,
-    size: file.size,
-  }), {
-    status: 201,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json(
+    {
+      key,
+      url: `/api/icons/${encodeURIComponent(key)}`,
+      size: file.size,
+    },
+    201,
+  )
 }

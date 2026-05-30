@@ -1,3 +1,5 @@
+import { json } from '../../lib/response'
+
 interface Env {
   DB: D1Database
 }
@@ -8,9 +10,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     'SELECT key, label, sort_order FROM categories ORDER BY sort_order ASC'
   ).all<{ key: string; label: string; sort_order: number }>()
 
-  return new Response(JSON.stringify(result.results), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json(result.results)
 }
 
 // POST /api/categories — create a new category (authenticated)
@@ -18,10 +18,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const body = await context.request.json<{ key: string; label: string }>()
 
   if (!body.key || !body.label) {
-    return new Response(JSON.stringify({ error: 'Missing required fields: key, label' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Missing required fields: key, label' }, 400)
   }
 
   const existing = await context.env.DB.prepare(
@@ -29,10 +26,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   ).bind(body.key).first()
 
   if (existing) {
-    return new Response(JSON.stringify({ error: '分组标识已存在' }), {
-      status: 409,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: '分组标识已存在' }, 409)
   }
 
   // Place new category at the end
@@ -46,10 +40,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     'INSERT INTO categories (key, label, sort_order) VALUES (?, ?, ?)'
   ).bind(body.key, body.label, sortOrder).run()
 
-  return new Response(JSON.stringify({ key: body.key, label: body.label, sort_order: sortOrder }), {
-    status: 201,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json({ key: body.key, label: body.label, sort_order: sortOrder }, 201)
 }
 
 // PUT /api/categories — batch update (reorder + rename)
@@ -59,10 +50,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
   }>()
 
   if (!body.categories || !Array.isArray(body.categories)) {
-    return new Response(JSON.stringify({ error: 'Invalid payload' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Invalid payload' }, 400)
   }
 
   const stmts = body.categories.map((cat) =>
@@ -71,9 +59,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     ).bind(cat.label, cat.sort_order, cat.key)
   )
 
-  await context.env.DB.batch(stmts)
+  if (stmts.length) await context.env.DB.batch(stmts)
 
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json({ success: true })
 }

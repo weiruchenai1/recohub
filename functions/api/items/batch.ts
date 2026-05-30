@@ -1,3 +1,5 @@
+import { json } from '../../lib/response'
+
 interface Env {
   DB: D1Database
 }
@@ -10,10 +12,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }>()
 
   if (!body.ids || body.ids.length === 0) {
-    return new Response(JSON.stringify({ error: 'No items specified' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'No items specified' }, 400)
   }
 
   const placeholders = body.ids.map(() => '?').join(',')
@@ -23,9 +22,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .bind(...body.ids)
       .run()
 
-    return new Response(JSON.stringify({ success: true, deleted: body.ids.length }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ success: true, deleted: body.ids.length })
   }
 
   if (body.action === 'move' && body.targetCategory) {
@@ -35,13 +32,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .bind(body.targetCategory, ...body.ids)
       .run()
 
-    return new Response(JSON.stringify({ success: true, moved: body.ids.length }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ success: true, moved: body.ids.length })
   }
 
-  return new Response(JSON.stringify({ error: 'Invalid action' }), {
-    status: 400,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json({ error: 'Invalid action' }, 400)
 }

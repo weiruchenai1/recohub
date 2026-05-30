@@ -17,7 +17,6 @@ const loading = ref(false)
 const linuxdoEnabled = ref(false)
 const linuxdoClientId = ref('')
 
-// 管理员专属操作触发的登录弹窗，隐藏 OAuth 登录
 const adminOnly = ui.loginAdminOnly
 
 onMounted(async () => {
@@ -79,7 +78,7 @@ function handleClose() {
         </h3>
       </div>
 
-      <!-- Linux DO 访客登录（管理员专属操作触发时隐藏） -->
+      <!-- Linux DO 访客登录 -->
       <template v-if="!adminOnly">
         <div v-if="linuxdoEnabled || auth.isVisitorLoggedIn" class="mb-5">
           <button

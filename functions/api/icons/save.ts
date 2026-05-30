@@ -1,5 +1,6 @@
 import { getIconKey } from '../../lib/autoIcon'
-import { assertSafeUrl } from '../../lib/urlValidation'
+import { assertSafeUrl, safeFetch } from '../../lib/urlValidation'
+import { json } from '../../lib/response'
 
 interface Env {
   ICONS: R2Bucket
@@ -11,57 +12,45 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const body = await context.request.json<{ url: string; siteUrl?: string }>()
 
   if (!body.url) {
-    return new Response(JSON.stringify({ error: 'URL is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'URL is required' }, 400)
   }
 
   try {
     assertSafeUrl(body.url)
   } catch {
-    return new Response(JSON.stringify({ error: 'URL not allowed' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'URL not allowed' }, 400)
   }
 
   try {
-    const resp = await fetch(body.url, {
+    // safeFetch 手动跟随重定向并逐跳校验，防止跳转到内网绕过 SSRF 检查
+    const resp = await safeFetch(body.url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecoHub/1.0)' },
-      redirect: 'follow',
     })
 
     if (!resp.ok) {
-      return new Response(JSON.stringify({ error: '获取图标失败' }), {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return json({ error: '获取图标失败' }, 502)
     }
 
     const contentLength = resp.headers.get('content-length')
     if (contentLength && parseInt(contentLength, 10) > MAX_SIZE) {
-      return new Response(JSON.stringify({ error: '图标文件过大（超过 512KB）' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return json({ error: '图标文件过大（超过 512KB）' }, 400)
     }
 
     const contentType = (resp.headers.get('content-type') || 'image/png').split(';')[0].trim()
+
+    // 仅接受图片，避免把任意内容当作图标存入 R2
+    if (!contentType.startsWith('image/')) {
+      return json({ error: '目标不是图片' }, 400)
+    }
+
     const buffer = await resp.arrayBuffer()
 
     if (buffer.byteLength === 0) {
-      return new Response(JSON.stringify({ error: '获取到的图标为空' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return json({ error: '获取到的图标为空' }, 400)
     }
 
     if (buffer.byteLength > MAX_SIZE) {
-      return new Response(JSON.stringify({ error: '图标文件过大（超过 512KB）' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return json({ error: '图标文件过大（超过 512KB）' }, 400)
     }
 
     // Determine extension from content type
@@ -80,18 +69,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       httpMetadata: { contentType },
     })
 
-    return new Response(JSON.stringify({
-      key,
-      url: `/api/icons/${encodeURIComponent(key)}`,
-      size: buffer.byteLength,
-    }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json(
+      {
+        key,
+        url: `/api/icons/${encodeURIComponent(key)}`,
+        size: buffer.byteLength,
+      },
+      201,
+    )
   } catch {
-    return new Response(JSON.stringify({ error: '获取图标失败' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: '获取图标失败' }, 500)
   }
 }

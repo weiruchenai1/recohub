@@ -19,9 +19,16 @@ function unauthorized() {
   })
 }
 
+function forbidden() {
+  return new Response(JSON.stringify({ error: 'Forbidden' }), {
+    status: 403,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 // -- Lightweight DB guard + auto-init from generated schema --
 
-const EXPECTED_VERSION = 7
+const EXPECTED_VERSION = 8
 let dbReady = false
 
 async function checkDB(db: D1Database) {
@@ -87,7 +94,11 @@ export const onRequest: PagesFunction<Env> = async (context: CFContext) => {
   const token = authHeader.slice(7)
   try {
     const secret = new TextEncoder().encode(context.env.JWT_SECRET)
-    await jwtVerify(token, secret)
+    const { payload } = await jwtVerify(token, secret)
+    // 写操作仅限管理员；访客 token（role: 'visitor'，用同一 JWT_SECRET 签发）不可调用
+    if (payload.role !== 'admin') {
+      return forbidden()
+    }
   } catch {
     return unauthorized()
   }

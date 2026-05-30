@@ -1,4 +1,4 @@
-import { assertSafeUrl } from './urlValidation'
+import { assertSafeUrl, safeFetch } from './urlValidation'
 
 const MAX_SIZE = 512 * 1024
 
@@ -45,10 +45,8 @@ export async function discoverIcons(siteUrl: string): Promise<string[]> {
 
   // 1. Parse HTML for <link rel="icon"> / <link rel="apple-touch-icon">
   try {
-    assertSafeUrl(baseUrl.toString())
-    const resp = await fetch(baseUrl.toString(), {
+    const resp = await safeFetch(baseUrl.toString(), {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecoHub/1.0)' },
-      redirect: 'follow',
     })
 
     if (resp.ok) {
@@ -96,11 +94,8 @@ async function downloadIcon(iconUrl: string): Promise<{
   ext: string
 } | null> {
   try {
-    assertSafeUrl(iconUrl)
-
-    const resp = await fetch(iconUrl, {
+    const resp = await safeFetch(iconUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RecoHub/1.0)' },
-      redirect: 'follow',
     })
 
     if (!resp.ok) return null

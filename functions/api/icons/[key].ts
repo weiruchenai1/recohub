@@ -1,5 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import { json } from '../../lib/response'
+
 interface Env {
   DB: D1Database
   ICONS: R2Bucket
@@ -10,10 +12,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const object = await context.env.ICONS.get(key)
 
   if (!object) {
-    return new Response(JSON.stringify({ error: 'Icon not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Icon not found' }, 404)
   }
 
   const headers = new Headers()
@@ -29,10 +28,7 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
   const object = await context.env.ICONS.get(key)
 
   if (!object) {
-    return new Response(JSON.stringify({ error: 'Icon not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Icon not found' }, 404)
   }
 
   await context.env.ICONS.delete(key)
@@ -40,10 +36,8 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
   // Clear icon_url references in items
   const iconUrl = `/api/icons/${encodeURIComponent(key)}`
   await context.env.DB.prepare(
-    'UPDATE items SET icon_url = NULL, updated_at = datetime(\'now\') WHERE icon_url = ?'
+    "UPDATE items SET icon_url = NULL, updated_at = datetime('now') WHERE icon_url = ?"
   ).bind(iconUrl).run()
 
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json({ success: true })
 }

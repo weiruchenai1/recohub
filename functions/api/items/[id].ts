@@ -1,4 +1,5 @@
 import { isValidHttpUrl } from '../../lib/urlValidation'
+import { json } from '../../lib/response'
 
 interface Env {
   DB: D1Database
@@ -20,17 +21,11 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     .first()
 
   if (!existing) {
-    return new Response(JSON.stringify({ error: 'Item not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Item not found' }, 404)
   }
 
   if (body.url !== undefined && !isValidHttpUrl(body.url)) {
-    return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Invalid URL format' }, 400)
   }
 
   await context.env.DB.prepare(
@@ -57,9 +52,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     .bind(id)
     .first()
 
-  return new Response(JSON.stringify(updated), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json(updated)
 }
 
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
@@ -70,15 +63,10 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
     .first()
 
   if (!existing) {
-    return new Response(JSON.stringify({ error: 'Item not found' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Item not found' }, 404)
   }
 
   await context.env.DB.prepare('DELETE FROM items WHERE id = ?').bind(id).run()
 
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json({ success: true })
 }

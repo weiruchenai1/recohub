@@ -57,5 +57,13 @@ CREATE TABLE IF NOT EXISTS ratings (
 CREATE INDEX IF NOT EXISTS idx_ratings_item_id ON ratings(item_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_linuxdo_id ON ratings(linuxdo_id);
 
--- 设置 schema 版本为 7
-UPDATE _schema_version SET version = 7;
+-- 登录失败记录（用于管理员登录的 IP 限流）
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip ON login_attempts(ip, created_at);
+
+-- 设置 schema 版本为 8
+UPDATE _schema_version SET version = 8;

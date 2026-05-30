@@ -89,6 +89,21 @@
 - `idx_ratings_item_id` — item_id 列
 - `idx_ratings_linuxdo_id` — linuxdo_id 列
 
+### `login_attempts`
+
+记录管理员登录失败尝试，用于按 IP 限流防暴力破解。
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| id | INTEGER PRIMARY KEY AUTOINCREMENT | 自增主键 |
+| ip | TEXT NOT NULL | 失败来源 IP（取自 `CF-Connecting-IP`） |
+| created_at | TEXT DEFAULT (datetime('now')) | 失败时间 |
+
+**索引**：
+- `idx_login_attempts_ip` — (ip, created_at) 复合索引
+
+登录成功会清除该 IP 的失败记录；每次失败时顺带清理 1 小时前的旧记录，避免表无限增长。
+
 ## 数据库初始化机制
 
 `db/migrate.sql` 和 `db/seed.sql` 是数据库结构与种子数据的**唯一事实来源**。
@@ -110,15 +125,18 @@ db/seed.sql    ──┘
 | 场景 | 处理方式 |
 |---|---|
 | 全新数据库（无 `items` 表） | 自动执行 `MIGRATE_SQL` + `SEED_SQL` 建表并写入种子数据 |
-| 已有数据库，版本匹配 | 跳过，正常处理请求 |
-| 已有数据库，版本不匹配 | 返回 503 错误，提示运行 `db:migrate` |
+| 已有数据库，版本 ≥ `EXPECTED_VERSION` | 跳过，正常处理请求 |
+| 已有数据库，版本 < `EXPECTED_VERSION` | 自动执行 `MIGRATE_SQL` 迁移（幂等，不重跑种子数据） |
+| 上述任一步骤执行失败 | 返回 503 错误，提示运行 `db:migrate` |
+
+> 自动迁移依赖嵌入在 `dbSchema.ts` 中的 `MIGRATE_SQL`，因此需先重新构建并部署带新 schema 的版本（见下文）。`dbReady` 在进程内缓存，迁移每个 Worker 实例只触发一次。
 
 ### Schema 变更流程
 
 1. 更新 `db/schema.sql` 和 `db/migrate.sql`（保持幂等）
 2. 更新 `_middleware.ts` 中的 `EXPECTED_VERSION` 常量
 3. 重新构建（`npm run build` 会自动重新生成 `dbSchema.ts`）
-4. 对已有数据库手动执行迁移：
+4. 部署带新 schema 的版本后，已有数据库会在下次请求时由 middleware **自动迁移**。也可手动执行以立即迁移（无需依赖部署）：
 
 ```bash
 # 远程数据库

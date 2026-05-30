@@ -1,5 +1,6 @@
 import { autoFetchIcon } from '../../lib/autoIcon'
 import { isValidHttpUrl } from '../../lib/urlValidation'
+import { json } from '../../lib/response'
 
 interface Env {
   DB: D1Database
@@ -47,13 +48,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     context.env.DB.prepare(dataSql).bind(...params).all(),
   ])
 
-  return new Response(JSON.stringify({
+  return json({
     data: dataResult.results,
     total: countResult?.total ?? 0,
     page,
     perPage,
-  }), {
-    headers: { 'Content-Type': 'application/json' },
   })
 }
 
@@ -68,17 +67,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }>()
 
   if (!body.category || !body.name || !body.url) {
-    return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Missing required fields' }, 400)
   }
 
   if (!isValidHttpUrl(body.url)) {
-    return new Response(JSON.stringify({ error: 'Invalid URL format' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: 'Invalid URL format' }, 400)
   }
 
   const existing = await context.env.DB.prepare(
@@ -88,27 +81,37 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     .first()
 
   if (existing) {
-    return new Response(JSON.stringify({ error: '该分类下已存在相同链接的条目' }), {
-      status: 409,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ error: '该分类下已存在相同链接的条目' }, 409)
   }
 
-  // Auto-fetch icon if not provided
-  const iconUrl = body.icon_url ?? await autoFetchIcon(body.url, context.env.ICONS)
+  // 提供了图标就直接用；否则先建条目，图标在后台异步抓取以免阻塞响应
+  const providedIcon = body.icon_url ?? null
 
   const result = await context.env.DB.prepare(
     'INSERT INTO items (category, name, url, note, sort_order, icon_url) VALUES (?, ?, ?, ?, ?, ?)'
   )
-    .bind(body.category, body.name, body.url, body.note || '', body.sort_order || 0, iconUrl)
+    .bind(body.category, body.name, body.url, body.note || '', body.sort_order || 0, providedIcon)
     .run()
 
+  const newId = result.meta.last_row_id
+
+  if (!providedIcon) {
+    // 抓取需 fetch 目标站点、可能耗时数秒，放到后台执行，不阻塞响应；抓到后回填 icon_url
+    context.waitUntil(
+      (async () => {
+        const fetched = await autoFetchIcon(body.url, context.env.ICONS)
+        if (fetched) {
+          await context.env.DB.prepare('UPDATE items SET icon_url = ? WHERE id = ?')
+            .bind(fetched, newId)
+            .run()
+        }
+      })(),
+    )
+  }
+
   const item = await context.env.DB.prepare('SELECT * FROM items WHERE id = ?')
-    .bind(result.meta.last_row_id)
+    .bind(newId)
     .first()
 
-  return new Response(JSON.stringify(item), {
-    status: 201,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return json(item, 201)
 }
